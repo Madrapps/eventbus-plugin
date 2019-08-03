@@ -15,9 +15,11 @@ class SubscribeLineMarkerProvider : LineMarkerProvider {
         if (uElement is UMethod) {
             val annotation = uElement.annotations.find { it.qualifiedName == "org.greenrobot.eventbus.Subscribe" }
             if (annotation != null) {
-                val psiElement = uElement.uastAnchor?.sourcePsi
-                if (psiElement != null) {
-                    return SubscribeLineMarkerInfo(psiElement, "post for ---")
+                if (uElement.uastParameters.size == 1) {
+                    val psiElement = uElement.uastAnchor?.sourcePsi
+                    if (psiElement != null) {
+                        return SubscribeLineMarkerInfo(psiElement, "post for ---")
+                    }
                 }
             }
         }
