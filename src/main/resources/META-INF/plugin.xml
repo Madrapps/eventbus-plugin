@@ -19,6 +19,11 @@
                                         implementationClass="com.madrapps.eventbus.subscribe.SubscribeLineMarkerProvider"/>
         <codeInsight.lineMarkerProvider language="JAVA"
                                         implementationClass="com.madrapps.eventbus.subscribe.SubscribeLineMarkerProvider"/>
+
+        <codeInsight.lineMarkerProvider language="kotlin"
+                                        implementationClass="com.madrapps.eventbus.post.PostLineMarkerProvider"/>
+        <codeInsight.lineMarkerProvider language="JAVA"
+                                        implementationClass="com.madrapps.eventbus.post.PostLineMarkerProvider"/>
     </extensions>
 
     <actions>

@@ -34,7 +34,7 @@ private class SubscribeLineMarkerInfo(
 ) : LineMarkerInfo<PsiElement>(
     psiElement,
     psiElement.textRange,
-    AllIcons.Icons.Ide.NextStep,
+    AllIcons.General.ArrowLeft,
     { message },
     null,
     RIGHT
