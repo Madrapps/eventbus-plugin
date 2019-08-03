@@ -6,6 +6,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.editor.markup.GutterIconRenderer.Alignment.RIGHT
 import com.intellij.psi.PsiElement
 import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.UastVisibility.PUBLIC
 import org.jetbrains.uast.toUElement
 
 class SubscribeLineMarkerProvider : LineMarkerProvider {
@@ -15,7 +16,7 @@ class SubscribeLineMarkerProvider : LineMarkerProvider {
         if (uElement is UMethod) {
             val annotation = uElement.annotations.find { it.qualifiedName == "org.greenrobot.eventbus.Subscribe" }
             if (annotation != null) {
-                if (uElement.uastParameters.size == 1) {
+                if (uElement.visibility == PUBLIC && uElement.uastParameters.size == 1) {
                     val psiElement = uElement.uastAnchor?.sourcePsi
                     if (psiElement != null) {
                         return SubscribeLineMarkerInfo(psiElement, "post for ---")
