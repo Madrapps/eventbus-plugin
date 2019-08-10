@@ -18,6 +18,7 @@ import com.intellij.usageView.UsageInfo
 import com.intellij.usages.*
 import com.intellij.util.toArray
 import com.madrapps.eventbus.post.isPostMethod
+import org.jetbrains.kotlin.idea.refactoring.getLineNumber
 import org.jetbrains.uast.*
 import org.jetbrains.uast.UastVisibility.PUBLIC
 import java.awt.event.MouseEvent
@@ -88,6 +89,15 @@ private class SubscribeLineMarkerInfo(
                 selectedValue?.navigate(true)
                 return super.onChosen(selectedValue, finalChoice)
             }
+
+            override fun getTextFor(value: Usage): String {
+                val uElement = (value as? UsageInfo2UsageAdapter)?.usageInfo?.element?.toUElement()
+                val sourcePsi = uElement?.getParentOfType<UQualifiedReferenceExpression>()?.sourcePsi
+                if (sourcePsi != null) {
+                    return "${sourcePsi.getLineNumber()}  ${sourcePsi.text}  in ${sourcePsi.containingFile.name}"
+                }
+                return value.toString()
+            }
         }
         val createListPopup = JBPopupFactory.getInstance().createListPopup(baseListPopupStep, 10)
 
@@ -113,8 +123,6 @@ private class SubscribeLineMarkerInfo(
     }
 
     private fun isPost(usageInfo: UsageInfo): Boolean {
-        println("$$ - $usageInfo")
-        println("$$ $$ - ${usageInfo.element.toUElement()}")
         val uElement = usageInfo.element.toUElement()
         if (uElement != null) {
             if (uElement.getParentOfType<UImportStatement>() == null) {

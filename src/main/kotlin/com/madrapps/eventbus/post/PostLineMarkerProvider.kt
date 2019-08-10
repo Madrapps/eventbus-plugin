@@ -12,30 +12,26 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UQualifiedReferenceExpression
 import org.jetbrains.uast.toUElement
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 
 class PostLineMarkerProvider : LineMarkerProvider {
 
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
         val uElement = element.toUElement() ?: return null
-        if (uElement is UQualifiedReferenceExpression && element !is PsiExpressionStatement) {
-            val uCallExpression = uElement.selector as? UCallExpression ?: return null
-            if (uCallExpression.receiverType?.canonicalText == "org.greenrobot.eventbus.EventBus") {
-                if (uCallExpression.methodName == "post") {
-                    val psiIdentifier = uCallExpression.methodIdentifier?.sourcePsi ?: return null
-                    return PostLineMarkerInfo(psiIdentifier, "Subscribed by ---")
-                }
-            }
+        if (element !is PsiExpressionStatement && isPostMethod(uElement)) {
+            val psiIdentifier = (uElement.selector as? UCallExpression)?.methodIdentifier?.sourcePsi ?: return null
+            return PostLineMarkerInfo(psiIdentifier, "Subscribed by ---")
         }
-//        if (element !is PsiExpressionStatement) {
-//            if (isPostMethod(uElement)) {
-////                uElement.selector as? UCallExpression
-//            }
-//        }
         return null
     }
 }
 
+@UseExperimental(ExperimentalContracts::class)
 fun isPostMethod(uElement: UElement): Boolean {
+    contract {
+        returns(true) implies (uElement is UQualifiedReferenceExpression)
+    }
     if (uElement is UQualifiedReferenceExpression) {
         val uCallExpression = uElement.selector as? UCallExpression ?: return false
         if (uCallExpression.receiverType?.canonicalText == "org.greenrobot.eventbus.EventBus") {
@@ -46,7 +42,7 @@ fun isPostMethod(uElement: UElement): Boolean {
 }
 
 private class PostLineMarkerInfo(
-    private val psiElement: PsiElement,
+    psiElement: PsiElement,
     private val message: String
 ) : LineMarkerInfo<PsiElement>(
     psiElement,
