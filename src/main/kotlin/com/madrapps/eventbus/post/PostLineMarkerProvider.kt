@@ -3,6 +3,8 @@ package com.madrapps.eventbus.post
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiExpressionStatement
@@ -38,4 +40,14 @@ private class PostLineMarkerInfo(
     { message },
     null,
     GutterIconRenderer.Alignment.RIGHT
-)
+) {
+    override fun createGutterRenderer(): GutterIconRenderer? {
+        return object : LineMarkerInfo.LineMarkerGutterIconRenderer<PsiElement>(this) {
+            override fun getClickAction(): AnAction? = object : AnAction(message) {
+                override fun actionPerformed(e: AnActionEvent) {
+                    println("-- $element")
+                }
+            }
+        }
+    }
+}
