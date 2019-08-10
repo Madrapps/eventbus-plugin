@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.openapi.editor.markup.GutterIconRenderer.Alignment.RIGHT
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.ui.popup.PopupStep
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.PsiClassReferenceType
@@ -61,14 +62,12 @@ private class SubscribeLineMarkerInfo(
                     override fun actionPerformed(e: AnActionEvent) {
                         val relativePoint = RelativePoint(e.inputEvent as MouseEvent)
 
-                        val elementToSearch = (uElement.uastParameters[0].type as PsiClassReferenceType).reference.resolve()
+                        val elementToSearch =
+                            (uElement.uastParameters[0].type as PsiClassReferenceType).reference.resolve()
                         if (elementToSearch != null) {
                             val collection = search(elementToSearch)
 
-                            val usages = collection.map {
-                                val usage: Usage = UsageInfo2UsageAdapter(it)
-                                usage
-                            }
+                            val usages = collection.map(::UsageInfo2UsageAdapter)
 
                             showUsages(usages, relativePoint)
                         }
@@ -82,8 +81,15 @@ private class SubscribeLineMarkerInfo(
         usages: List<Usage>,
         relativePoint: RelativePoint
     ) {
-        JBPopupFactory.getInstance().createListPopup(BaseListPopupStep("Usages", usages))
-            .show(relativePoint)
+        val baseListPopupStep = object : BaseListPopupStep<Usage>("Usages", usages) {
+            override fun onChosen(selectedValue: Usage?, finalChoice: Boolean): PopupStep<*>? {
+                selectedValue?.navigate(true)
+                return super.onChosen(selectedValue, finalChoice)
+            }
+        }
+        val createListPopup = JBPopupFactory.getInstance().createListPopup(baseListPopupStep)
+
+        createListPopup.show(relativePoint)
 
         val toArray = usages.toArray(arrayOfNulls<Usage>(usages.size))
         val usageViewPresentation = UsageViewPresentation()
