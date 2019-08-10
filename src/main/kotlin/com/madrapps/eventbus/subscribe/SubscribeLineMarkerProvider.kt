@@ -17,9 +17,8 @@ import com.intellij.ui.awt.RelativePoint
 import com.intellij.usageView.UsageInfo
 import com.intellij.usages.*
 import com.intellij.util.toArray
-import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.*
 import org.jetbrains.uast.UastVisibility.PUBLIC
-import org.jetbrains.uast.toUElement
 import java.awt.event.MouseEvent
 
 
@@ -67,7 +66,9 @@ private class SubscribeLineMarkerInfo(
                         if (elementToSearch != null) {
                             val collection = search(elementToSearch)
 
-                            val usages = collection.map(::UsageInfo2UsageAdapter)
+                            val usages = collection.filter {
+                                isPost(it)
+                            }.map(::UsageInfo2UsageAdapter)
 
                             showUsages(usages, relativePoint)
                         }
@@ -87,7 +88,7 @@ private class SubscribeLineMarkerInfo(
                 return super.onChosen(selectedValue, finalChoice)
             }
         }
-        val createListPopup = JBPopupFactory.getInstance().createListPopup(baseListPopupStep)
+        val createListPopup = JBPopupFactory.getInstance().createListPopup(baseListPopupStep, 10)
 
         createListPopup.show(relativePoint)
 
@@ -108,6 +109,21 @@ private class SubscribeLineMarkerInfo(
             toArray,
             usageViewPresentation
         )
+    }
+
+    private fun isPost(usageInfo: UsageInfo): Boolean {
+        println("$$ - $usageInfo")
+        println("$$ $$ - ${usageInfo.element.toUElement()}")
+        val uElement = usageInfo.element.toUElement()
+        if (uElement != null) {
+            if (uElement.getParentOfType<UImportStatement>() == null) {
+                val parent = uElement.getParentOfType<UQualifiedReferenceExpression>()?.sourcePsi
+                if (parent != null) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 }
 
