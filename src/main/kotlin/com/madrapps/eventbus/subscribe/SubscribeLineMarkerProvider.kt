@@ -17,6 +17,7 @@ import com.intellij.ui.awt.RelativePoint
 import com.intellij.usageView.UsageInfo
 import com.intellij.usages.*
 import com.intellij.util.toArray
+import com.madrapps.eventbus.post.isPostMethod
 import org.jetbrains.uast.*
 import org.jetbrains.uast.UastVisibility.PUBLIC
 import java.awt.event.MouseEvent
@@ -117,9 +118,9 @@ private class SubscribeLineMarkerInfo(
         val uElement = usageInfo.element.toUElement()
         if (uElement != null) {
             if (uElement.getParentOfType<UImportStatement>() == null) {
-                val parent = uElement.getParentOfType<UQualifiedReferenceExpression>()?.sourcePsi
+                val parent = uElement.getParentOfType<UQualifiedReferenceExpression>()
                 if (parent != null) {
-                    return true
+                    return isPostMethod(parent)
                 }
             }
         }

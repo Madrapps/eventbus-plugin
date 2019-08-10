@@ -9,13 +9,14 @@ import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiExpressionStatement
 import org.jetbrains.uast.UCallExpression
+import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UQualifiedReferenceExpression
 import org.jetbrains.uast.toUElement
 
 class PostLineMarkerProvider : LineMarkerProvider {
 
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
-        val uElement = element.toUElement()
+        val uElement = element.toUElement() ?: return null
         if (uElement is UQualifiedReferenceExpression && element !is PsiExpressionStatement) {
             val uCallExpression = uElement.selector as? UCallExpression ?: return null
             if (uCallExpression.receiverType?.canonicalText == "org.greenrobot.eventbus.EventBus") {
@@ -25,10 +26,24 @@ class PostLineMarkerProvider : LineMarkerProvider {
                 }
             }
         }
+//        if (element !is PsiExpressionStatement) {
+//            if (isPostMethod(uElement)) {
+////                uElement.selector as? UCallExpression
+//            }
+//        }
         return null
     }
 }
 
+fun isPostMethod(uElement: UElement): Boolean {
+    if (uElement is UQualifiedReferenceExpression) {
+        val uCallExpression = uElement.selector as? UCallExpression ?: return false
+        if (uCallExpression.receiverType?.canonicalText == "org.greenrobot.eventbus.EventBus") {
+            return uCallExpression.methodName == "post"
+        }
+    }
+    return false
+}
 
 private class PostLineMarkerInfo(
     private val psiElement: PsiElement,
