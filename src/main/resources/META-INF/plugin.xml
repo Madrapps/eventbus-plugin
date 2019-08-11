@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.madrapps.eventbus-plugin</id>
     <name>GreenRobot EventBus</name>
-    <vendor email="th.saravana@gmail.com" url="https://thsaravana.github.io">Madrapps</vendor>
+    <vendor email="madrasappfactory@gmail.com" url="https://thsaravana.github.io">Madrapps</vendor>
 
     <description><![CDATA[
     <p>Support navigation for <b>Java/Kotlin</b> projects that uses greenrobot's <a href="http://greenrobot.org/eventbus/">EventBus</a> library</p><br/>
