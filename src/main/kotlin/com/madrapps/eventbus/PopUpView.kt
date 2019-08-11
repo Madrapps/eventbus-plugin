@@ -56,7 +56,7 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
     table.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
 
     return JBPopupFactory.getInstance().createPopupChooserBuilder(table)
-        .setTitle("Find Usages")
+        .setTitle(getTitle(usages))
         .setMovable(true)
         .setResizable(true)
         .setItemChoosenCallback {
@@ -65,6 +65,10 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
             val usage = (table.model as? ListTableModel<Usage>)?.getItem(selectedRow)
             usage?.navigate(true)
         }
+}
+
+private fun getTitle(usages: List<Usage>): String {
+    return if (usages.isEmpty()) "No usages found" else "Find Usages"
 }
 
 private class CellRenderer : TableCellRenderer {

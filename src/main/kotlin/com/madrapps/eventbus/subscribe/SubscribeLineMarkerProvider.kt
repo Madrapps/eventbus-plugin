@@ -77,7 +77,11 @@ private class SubscribeLineMarkerInfo(
                             val usages = search(elementToSearch)
                                 .filter(UsageInfo::isPost)
                                 .map(::UsageInfo2UsageAdapter)
-                            showSubscribeUsages(usages, RelativePoint(e.inputEvent as MouseEvent))
+                            if (usages.size == 1) {
+                                usages.first().navigate(true)
+                            } else {
+                                showSubscribeUsages(usages, RelativePoint(e.inputEvent as MouseEvent))
+                            }
                         }
                     }
                 }

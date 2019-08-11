@@ -78,7 +78,11 @@ private class PostLineMarkerInfo(
                         val usages = search(elementToSearch)
                             .filter(UsageInfo::isSubscribe)
                             .map(::UsageInfo2UsageAdapter)
-                        showPostUsages(usages, RelativePoint(e.inputEvent as MouseEvent))
+                        if (usages.size == 1) {
+                            usages.first().navigate(true)
+                        } else {
+                            showPostUsages(usages, RelativePoint(e.inputEvent as MouseEvent))
+                        }
                     }
                 }
             }
