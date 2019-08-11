@@ -50,6 +50,7 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
     table.showHorizontalLines = false
     table.showVerticalLines = false
     table.intercellSpacing = Dimension(0, 0)
+    table.rowHeight = PlatformIcons.METHOD_ICON.iconHeight + 2
     table.setShowGrid(false)
     table.columnModel.getColumn(0).cellRenderer = CellRenderer()
     resizeColumnWidth(table)
@@ -81,7 +82,7 @@ private class CellRenderer : TableCellRenderer {
         row: Int,
         column: Int
     ): Component {
-        val panel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        val panel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 0))
 
         val bg = UIUtil.getListSelectionBackground()
         val fg = UIUtil.getListSelectionForeground()
@@ -89,7 +90,7 @@ private class CellRenderer : TableCellRenderer {
         panel.foreground = if (isSelected) fg else list.foreground
 
         val textChunks = SimpleColoredComponent()
-        textChunks.ipad = Insets(0, 3, 0, 0)
+        textChunks.ipad = Insets(0, 2, 0, 0)
         textChunks.icon = PlatformIcons.METHOD_ICON
         textChunks.border = null
         textChunks.size = Dimension(PlatformIcons.METHOD_ICON.iconWidth, PlatformIcons.METHOD_ICON.iconHeight)

@@ -1,5 +1,6 @@
 package com.madrapps.eventbus.post
 
+import com.intellij.codeHighlighting.Pass
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.openapi.actionSystem.AnAction
@@ -20,6 +21,11 @@ import org.jetbrains.uast.*
 import java.awt.event.MouseEvent
 
 class PostLineMarkerProvider : LineMarkerProvider {
+
+    override fun collectSlowLineMarkers(
+        elements: MutableList<PsiElement>,
+        result: MutableCollection<LineMarkerInfo<PsiElement>>
+    ) = Unit
 
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
         val uElement = element.toUElement() ?: return null
@@ -63,6 +69,7 @@ private class PostLineMarkerInfo(
     psiElement,
     psiElement.textRange,
     IconLoader.getIcon("/icons/greenrobot.png"),
+    Pass.LINE_MARKERS,
     null,
     null,
     RIGHT
