@@ -1,7 +1,7 @@
 # eventbus-plugin
 IntelliJ iDEA plugin to work with projects using greenrobot's <a href="http://greenrobot.org/eventbus/">EventBus</a> library
 
-<img src="/preview/screenshare.gif" alt="preview" title="preview" width="500" height="500"/>
+<img src="/preview/screenshare.gif" alt="preview" title="preview"/>
 
 Features
 -----
