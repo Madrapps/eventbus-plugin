@@ -2,9 +2,6 @@ package com.madrapps.eventbus.post
 
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.openapi.editor.markup.GutterIconRenderer.Alignment.RIGHT
 import com.intellij.openapi.util.IconLoader
 import com.intellij.psi.PsiElement
@@ -17,7 +14,6 @@ import com.madrapps.eventbus.search
 import com.madrapps.eventbus.showPostUsages
 import com.madrapps.eventbus.subscribe.isSubscribe
 import org.jetbrains.uast.*
-import java.awt.event.MouseEvent
 
 class PostLineMarkerProvider : LineMarkerProvider {
 
@@ -64,28 +60,20 @@ private class PostLineMarkerInfo(
     psiElement.textRange,
     IconLoader.getIcon("/icons/greenrobot.png"),
     null,
-    null,
-    RIGHT
-) {
-    override fun createGutterRenderer(): GutterIconRenderer? {
-        return object : LineMarkerInfo.LineMarkerGutterIconRenderer<PsiElement>(this) {
-            override fun getClickAction(): AnAction? = object : AnAction() {
-                override fun actionPerformed(e: AnActionEvent) {
-
-                    val elementToSearch = (uElement.valueArguments.firstOrNull()
-                        ?.getExpressionType() as PsiClassReferenceType).resolve()
-                    if (elementToSearch != null) {
-                        val usages = search(elementToSearch)
-                            .filter(UsageInfo::isSubscribe)
-                            .map(::UsageInfo2UsageAdapter)
-                        if (usages.size == 1) {
-                            usages.first().navigate(true)
-                        } else {
-                            showPostUsages(usages, RelativePoint(e.inputEvent as MouseEvent))
-                        }
-                    }
-                }
+    { event, _ ->
+        val elementToSearch = (uElement.valueArguments.firstOrNull()
+            ?.getExpressionType() as PsiClassReferenceType).resolve()
+        if (elementToSearch != null) {
+            val collection = search(elementToSearch)
+            val usages = collection
+                .filter(UsageInfo::isSubscribe)
+                .map(::UsageInfo2UsageAdapter)
+            if (usages.size == 1) {
+                usages.first().navigate(true)
+            } else {
+                showPostUsages(usages, RelativePoint(event))
             }
         }
-    }
-}
+    },
+    RIGHT
+)
