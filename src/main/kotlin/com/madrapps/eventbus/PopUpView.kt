@@ -19,10 +19,14 @@ import java.awt.Component
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Insets
+import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.table.TableCellRenderer
 import kotlin.math.max
+import javax.swing.table.DefaultTableCellRenderer
+
+
 
 internal fun showSubscribeUsages(usages: List<Usage>, relativePoint: RelativePoint) {
     val columnInfo = arrayOf(
@@ -55,6 +59,10 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
     table.columnModel.getColumn(0).cellRenderer = CellRenderer()
     resizeColumnWidth(table)
     table.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
+
+    val rightRenderer = DefaultTableCellRenderer()
+    rightRenderer.horizontalAlignment = JLabel.RIGHT
+    table.columnModel.getColumn(3).cellRenderer = rightRenderer
 
     return JBPopupFactory.getInstance().createPopupChooserBuilder(table)
         .setTitle(getTitle(usages))
