@@ -1,10 +1,11 @@
-package com.madrapps.eventbus.subscribe
+package com.madrapps.eventbus
 
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.PopupChooserBuilder
 import com.intellij.psi.PsiElement
 import com.intellij.ui.ScrollingUtil
 import com.intellij.ui.SimpleColoredComponent
+import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.table.JBTable
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageInfo2UsageAdapter
@@ -26,13 +27,36 @@ import javax.swing.table.TableCellRenderer
 import kotlin.math.max
 
 
+internal fun showUsages(usages: List<Usage>, relativePoint: RelativePoint) {
+
+    showTablePopUp(usages).createPopup().show(relativePoint)
+
+//        val toArray = usages.toArray(arrayOfNulls<Usage>(usages.size))
+//        val usageViewPresentation = UsageViewPresentation()
+//        usageViewPresentation.tabText = "Type"
+//        usageViewPresentation.isOpenInNewTab = false
+//        usageViewPresentation.isCodeUsages = false
+//        usageViewPresentation.isUsageTypeFilteringAvailable = false
+//        usageViewPresentation.codeUsagesString = "codeUsagesString"
+//        usageViewPresentation.contextText = "contextText"
+//        usageViewPresentation.nonCodeUsagesString = "nonCodeUsagesString"
+//        usageViewPresentation.scopeText = "scopeTest"
+//        usageViewPresentation.targetsNodeText = "targetsNodeText"
+//        val instance = UsageViewManager.getInstance(element?.project!!)
+//        instance.showUsages(
+//            UsageTarget.EMPTY_ARRAY,
+//            toArray,
+//            usageViewPresentation
+//        )
+}
+
 private fun Usage.psiElement(): PsiElement? {
     val uElement = (this as? UsageInfo2UsageAdapter)?.usageInfo?.element?.toUElement()
     val sourcePsi = uElement?.getParentOfType<UQualifiedReferenceExpression>()?.sourcePsi
     return sourcePsi
 }
 
-fun showTablePopUp(usages: List<Usage>): PopupChooserBuilder<*> {
+private fun showTablePopUp(usages: List<Usage>): PopupChooserBuilder<*> {
     val table = JBTable()
     ScrollingUtil.installActions(table)
     val columnInfos = getColumnInfos()
@@ -73,7 +97,7 @@ private fun getColumnInfos(): Array<MyColumnInfo> {
         })
 }
 
-internal class CellRenderer : TableCellRenderer {
+private class CellRenderer : TableCellRenderer {
 
     override fun getTableCellRendererComponent(
         list: JTable,

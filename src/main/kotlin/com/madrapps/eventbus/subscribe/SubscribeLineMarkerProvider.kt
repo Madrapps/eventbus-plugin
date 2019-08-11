@@ -11,10 +11,11 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.usageView.UsageInfo
-import com.intellij.usages.Usage
 import com.intellij.usages.UsageInfo2UsageAdapter
+import com.madrapps.eventbus.post.isPost
 import com.madrapps.eventbus.post.isPostMethod
 import com.madrapps.eventbus.search
+import com.madrapps.eventbus.showUsages
 import org.jetbrains.uast.*
 import org.jetbrains.uast.UastVisibility.PUBLIC
 import java.awt.event.MouseEvent
@@ -57,7 +58,6 @@ private class SubscribeLineMarkerInfo(
             override fun getClickAction(): AnAction? {
                 return object : AnAction(message) {
                     override fun actionPerformed(e: AnActionEvent) {
-                        val relativePoint = RelativePoint(e.inputEvent as MouseEvent)
 
                         val elementToSearch =
                             (uElement.uastParameters[0].type as PsiClassReferenceType).reference.resolve()
@@ -68,47 +68,11 @@ private class SubscribeLineMarkerInfo(
                                 it.isPost()
                             }.map(::UsageInfo2UsageAdapter)
 
-                            showUsages(usages, relativePoint)
+                            showUsages(usages, RelativePoint(e.inputEvent as MouseEvent))
                         }
                     }
                 }
             }
         }
-    }
-
-    private fun showUsages(usages: List<Usage>, relativePoint: RelativePoint) {
-
-        showTablePopUp(usages).createPopup().show(relativePoint)
-
-//        val toArray = usages.toArray(arrayOfNulls<Usage>(usages.size))
-//        val usageViewPresentation = UsageViewPresentation()
-//        usageViewPresentation.tabText = "Type"
-//        usageViewPresentation.isOpenInNewTab = false
-//        usageViewPresentation.isCodeUsages = false
-//        usageViewPresentation.isUsageTypeFilteringAvailable = false
-//        usageViewPresentation.codeUsagesString = "codeUsagesString"
-//        usageViewPresentation.contextText = "contextText"
-//        usageViewPresentation.nonCodeUsagesString = "nonCodeUsagesString"
-//        usageViewPresentation.scopeText = "scopeTest"
-//        usageViewPresentation.targetsNodeText = "targetsNodeText"
-//        val instance = UsageViewManager.getInstance(element?.project!!)
-//        instance.showUsages(
-//            UsageTarget.EMPTY_ARRAY,
-//            toArray,
-//            usageViewPresentation
-//        )
-    }
-
-    private fun UsageInfo.isPost(): Boolean {
-        val uElement = element.toUElement()
-        if (uElement != null) {
-            if (uElement.getParentOfType<UImportStatement>() == null) {
-                val parent = uElement.getParentOfType<UQualifiedReferenceExpression>()
-                if (parent != null) {
-                    return isPostMethod(parent)
-                }
-            }
-        }
-        return false
     }
 }
