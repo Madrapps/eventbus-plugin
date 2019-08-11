@@ -4,15 +4,18 @@
     <vendor email="th.saravana@gmail.com" url="https://thsaravana.github.io">Madrapps</vendor>
 
     <description><![CDATA[
-    <p>Support navigation for <b>Java/Kotlin</b> projects that uses greenrobot's <a href="http://greenrobot.org/eventbus/">EventBus</a> library</p>
+    <p>Support navigation for <b>Java/Kotlin</b> projects that uses greenrobot's <a href="http://greenrobot.org/eventbus/">EventBus</a> library</p><br/>
     <p>Features</p>
-    TODO
-    ]]></description>
+        <ul>
+            <li>Supports <i>post</i>, <i>postSticky</i> and <i>@Subscribe</i></li>
+            <li>Jump from post to subscribe and vice versa</li>
+            <li>Shows marker only for <i>@Subscribe</i> methods that have correct signatures</li>
+            <li>Fully supported for project using both Java and Kotlin</li>
+        </ul>]]>
+    </description>
 
     <depends>com.intellij.modules.lang</depends>
     <depends>org.jetbrains.kotlin</depends>
-
-    <version>0.1</version>
 
     <extensions defaultExtensionNs="com.intellij">
         <codeInsight.lineMarkerProvider language="kotlin"

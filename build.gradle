@@ -33,6 +33,5 @@ compileTestKotlin {
 }
 patchPluginXml {
     changeNotes """
-      - Initial Commit. <br>
     """
 }

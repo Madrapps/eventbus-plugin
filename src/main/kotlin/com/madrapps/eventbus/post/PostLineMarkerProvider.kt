@@ -48,7 +48,7 @@ private fun UElement.getPostCallExpression(): UCallExpression? {
     if (this is UQualifiedReferenceExpression) {
         val uCallExpression = selector as? UCallExpression ?: return null
         if (uCallExpression.receiverType?.canonicalText == "org.greenrobot.eventbus.EventBus"
-            && uCallExpression.methodName == "post"
+            && (uCallExpression.methodName == "post" || uCallExpression.methodName == "postSticky")
         ) {
             return uCallExpression
         }
