@@ -1,0 +1,126 @@
+package com.madrapps.eventbus.subscribe
+
+import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.ui.popup.PopupChooserBuilder
+import com.intellij.psi.PsiElement
+import com.intellij.ui.ScrollingUtil
+import com.intellij.ui.SimpleColoredComponent
+import com.intellij.ui.table.JBTable
+import com.intellij.usages.Usage
+import com.intellij.usages.UsageInfo2UsageAdapter
+import com.intellij.util.PlatformIcons
+import com.intellij.util.ui.ColumnInfo
+import com.intellij.util.ui.ListTableModel
+import com.intellij.util.ui.UIUtil
+import org.jetbrains.kotlin.idea.refactoring.getLineNumber
+import org.jetbrains.uast.UQualifiedReferenceExpression
+import org.jetbrains.uast.getParentOfType
+import org.jetbrains.uast.toUElement
+import java.awt.Component
+import java.awt.Dimension
+import java.awt.FlowLayout
+import java.awt.Insets
+import javax.swing.JPanel
+import javax.swing.JTable
+import javax.swing.table.TableCellRenderer
+import kotlin.math.max
+
+
+private fun Usage.psiElement(): PsiElement? {
+    val uElement = (this as? UsageInfo2UsageAdapter)?.usageInfo?.element?.toUElement()
+    val sourcePsi = uElement?.getParentOfType<UQualifiedReferenceExpression>()?.sourcePsi
+    return sourcePsi
+}
+
+fun showTablePopUp(usages: List<Usage>): PopupChooserBuilder<*> {
+    val table = JBTable()
+    ScrollingUtil.installActions(table)
+    val columnInfos = getColumnInfos()
+    table.model = ListTableModel(columnInfos, usages)
+    table.tableHeader = null
+    table.showHorizontalLines = false
+    table.showVerticalLines = false
+    table.intercellSpacing = Dimension(0, 0)
+    table.setShowGrid(false)
+    table.columnModel.getColumn(0).cellRenderer = CellRenderer()
+    resizeColumnWidth(table)
+    table.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
+
+
+    return JBPopupFactory.getInstance().createPopupChooserBuilder(table)
+        .setTitle("Find Usages")
+        .setMovable(true)
+        .setResizable(true)
+        .setItemChoosenCallback {
+            val selectedRow = table.selectedRow
+
+            val valueAt = (table.model as? ListTableModel<Usage>)?.getItem(selectedRow)
+            valueAt?.navigate(true)
+        }
+}
+
+private fun getColumnInfos(): Array<MyColumnInfo> {
+    return arrayOf(
+        MyColumnInfo {
+            ""
+        },
+        MyColumnInfo {
+            it.psiElement()?.getLineNumber()?.toString() ?: ""
+        }, MyColumnInfo {
+            it.psiElement()?.text ?: ""
+        }, MyColumnInfo {
+            it.psiElement()?.containingFile?.name ?: ""
+        })
+}
+
+internal class CellRenderer : TableCellRenderer {
+
+    override fun getTableCellRendererComponent(
+        list: JTable,
+        value: Any,
+        isSelected: Boolean,
+        hasFocus: Boolean,
+        row: Int,
+        column: Int
+    ): Component {
+        val panel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+
+        val bg = UIUtil.getListSelectionBackground()
+        val fg = UIUtil.getListSelectionForeground()
+        panel.background = if (isSelected) bg else list.background
+        panel.foreground = if (isSelected) fg else list.foreground
+
+        val textChunks = SimpleColoredComponent()
+        textChunks.ipad = Insets(0, 3, 0, 0)
+        textChunks.icon = PlatformIcons.METHOD_ICON
+        textChunks.border = null
+        textChunks.size = Dimension(PlatformIcons.METHOD_ICON.iconWidth, PlatformIcons.METHOD_ICON.iconHeight)
+        panel.add(textChunks)
+        return panel
+    }
+}
+
+
+private fun resizeColumnWidth(table: JTable) {
+    val columnModel = table.columnModel
+    for (column in 0 until table.columnCount) {
+        var width = 16
+        for (row in 0 until table.rowCount) {
+            val renderer = table.getCellRenderer(row, column)
+            val comp = table.prepareRenderer(renderer, row, column)
+            width = max(comp.preferredSize.width + 1, width)
+        }
+        if (width > 300)
+            width = 300
+        columnModel.getColumn(column).preferredWidth = width
+    }
+}
+
+private class MyColumnInfo(val value: (Usage) -> String) : ColumnInfo<Usage, String>("") {
+    override fun valueOf(item: Usage?): String? {
+        if (item != null) {
+            return value(item)
+        }
+        return item?.toString()
+    }
+}
