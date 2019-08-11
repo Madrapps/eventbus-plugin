@@ -13,62 +13,71 @@ import com.intellij.ui.awt.RelativePoint
 import com.intellij.usageView.UsageInfo
 import com.intellij.usages.UsageInfo2UsageAdapter
 import com.madrapps.eventbus.post.isPost
-import com.madrapps.eventbus.post.isPostMethod
 import com.madrapps.eventbus.search
 import com.madrapps.eventbus.showUsages
 import org.jetbrains.uast.*
 import org.jetbrains.uast.UastVisibility.PUBLIC
 import java.awt.event.MouseEvent
 
-
 class SubscribeLineMarkerProvider : LineMarkerProvider {
 
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
-        val uElement = element.toUElement()
-        if (uElement is UMethod) {
-            val annotation = uElement.annotations.find { it.qualifiedName == "org.greenrobot.eventbus.Subscribe" }
-            if (annotation != null) {
-                if (uElement.visibility == PUBLIC && uElement.uastParameters.size == 1) {
-                    val psiElement = uElement.uastAnchor?.sourcePsi
-                    if (psiElement != null) {
-                        return SubscribeLineMarkerInfo(psiElement, "post for ---", uElement)
-                    }
-                }
+        val uElement = element.toUElement() ?: return null
+        val uMethod = uElement.getSubscribeMethod()
+        if (uMethod != null) {
+            val psiElement = uMethod.uastAnchor?.sourcePsi
+            if (psiElement != null) {
+                return SubscribeLineMarkerInfo(psiElement, uMethod)
             }
         }
         return null
     }
 }
 
+internal fun UsageInfo.isSubscribe(): Boolean {
+    val uElement = element.toUElement()
+    if (uElement != null) {
+        if (uElement.getParentOfType<UImportStatement>() == null) {
+            return uElement.getParentOfType<UMethod>()?.getSubscribeMethod() != null
+        }
+    }
+    return false
+}
+
+private fun UElement.getSubscribeMethod(): UMethod? {
+    if (this is UMethod) {
+        annotations.find { it.qualifiedName == "org.greenrobot.eventbus.Subscribe" } ?: return null
+        if (visibility == PUBLIC && uastParameters.size == 1) {
+            return this
+        }
+    }
+    return null
+}
+
 private class SubscribeLineMarkerInfo(
     psiElement: PsiElement,
-    private val message: String,
     private val uElement: UMethod
 ) : LineMarkerInfo<PsiElement>(
     psiElement,
     psiElement.textRange,
     AllIcons.General.ArrowLeft,
-    { message },
+    null,
     null,
     RIGHT
 ) {
-
     override fun createGutterRenderer(): GutterIconRenderer? {
         return object : LineMarkerGutterIconRenderer<PsiElement>(this) {
             override fun getClickAction(): AnAction? {
-                return object : AnAction(message) {
+                return object : AnAction() {
                     override fun actionPerformed(e: AnActionEvent) {
 
                         val elementToSearch =
                             (uElement.uastParameters[0].type as PsiClassReferenceType).reference.resolve()
                         if (elementToSearch != null) {
-                            val collection = search(elementToSearch)
-
-                            val usages = collection.filter {
-                                it.isPost()
-                            }.map(::UsageInfo2UsageAdapter)
-
-                            showUsages(usages, RelativePoint(e.inputEvent as MouseEvent))
+                            val usages = search(elementToSearch)
+                                .filter(UsageInfo::isPost)
+                                .map(::UsageInfo2UsageAdapter)
+                            showUsages(usages, RelativePoint(e.inputEvent as MouseEvent), true)
                         }
                     }
                 }

@@ -14,6 +14,7 @@ import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
 import com.intellij.util.ui.UIUtil
 import org.jetbrains.kotlin.idea.refactoring.getLineNumber
+import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UQualifiedReferenceExpression
 import org.jetbrains.uast.getParentOfType
 import org.jetbrains.uast.toUElement
@@ -27,9 +28,9 @@ import javax.swing.table.TableCellRenderer
 import kotlin.math.max
 
 
-internal fun showUsages(usages: List<Usage>, relativePoint: RelativePoint) {
+internal fun showUsages(usages: List<Usage>, relativePoint: RelativePoint, isPost: Boolean) {
 
-    showTablePopUp(usages).createPopup().show(relativePoint)
+    showTablePopUp(usages, isPost).createPopup().show(relativePoint)
 
 //        val toArray = usages.toArray(arrayOfNulls<Usage>(usages.size))
 //        val usageViewPresentation = UsageViewPresentation()
@@ -50,16 +51,20 @@ internal fun showUsages(usages: List<Usage>, relativePoint: RelativePoint) {
 //        )
 }
 
-private fun Usage.psiElement(): PsiElement? {
+private fun Usage.psiElement(isPost: Boolean): PsiElement? {
     val uElement = (this as? UsageInfo2UsageAdapter)?.usageInfo?.element?.toUElement()
-    val sourcePsi = uElement?.getParentOfType<UQualifiedReferenceExpression>()?.sourcePsi
-    return sourcePsi
+    val parentOfType = if (isPost) {
+        uElement?.getParentOfType<UQualifiedReferenceExpression>()
+    } else {
+        uElement?.getParentOfType<UMethod>()
+    }
+    return parentOfType?.sourcePsi
 }
 
-private fun showTablePopUp(usages: List<Usage>): PopupChooserBuilder<*> {
+private fun showTablePopUp(usages: List<Usage>, isPost: Boolean): PopupChooserBuilder<*> {
     val table = JBTable()
     ScrollingUtil.installActions(table)
-    val columnInfos = getColumnInfos()
+    val columnInfos = getColumnInfos(isPost)
     table.model = ListTableModel(columnInfos, usages)
     table.tableHeader = null
     table.showHorizontalLines = false
@@ -83,17 +88,17 @@ private fun showTablePopUp(usages: List<Usage>): PopupChooserBuilder<*> {
         }
 }
 
-private fun getColumnInfos(): Array<MyColumnInfo> {
+private fun getColumnInfos(isPost: Boolean): Array<MyColumnInfo> {
     return arrayOf(
         MyColumnInfo {
             ""
         },
         MyColumnInfo {
-            it.psiElement()?.getLineNumber()?.toString() ?: ""
+            it.psiElement(isPost)?.getLineNumber()?.toString() ?: ""
         }, MyColumnInfo {
-            it.psiElement()?.text ?: ""
+            it.psiElement(isPost)?.text ?: ""
         }, MyColumnInfo {
-            it.psiElement()?.containingFile?.name ?: ""
+            it.psiElement(isPost)?.containingFile?.name ?: ""
         })
 }
 
@@ -123,7 +128,6 @@ private class CellRenderer : TableCellRenderer {
         return panel
     }
 }
-
 
 private fun resizeColumnWidth(table: JTable) {
     val columnModel = table.columnModel
