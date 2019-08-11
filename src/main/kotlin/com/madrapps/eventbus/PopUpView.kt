@@ -2,7 +2,6 @@ package com.madrapps.eventbus
 
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.PopupChooserBuilder
-import com.intellij.psi.PsiElement
 import com.intellij.ui.ScrollingUtil
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.awt.RelativePoint
@@ -13,11 +12,9 @@ import com.intellij.util.PlatformIcons
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
 import com.intellij.util.ui.UIUtil
-import org.jetbrains.kotlin.idea.refactoring.getLineNumber
+import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UQualifiedReferenceExpression
-import org.jetbrains.uast.getParentOfType
-import org.jetbrains.uast.toUElement
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -27,44 +24,27 @@ import javax.swing.JTable
 import javax.swing.table.TableCellRenderer
 import kotlin.math.max
 
-
-internal fun showUsages(usages: List<Usage>, relativePoint: RelativePoint, isPost: Boolean) {
-
-    showTablePopUp(usages, isPost).createPopup().show(relativePoint)
-
-//        val toArray = usages.toArray(arrayOfNulls<Usage>(usages.size))
-//        val usageViewPresentation = UsageViewPresentation()
-//        usageViewPresentation.tabText = "Type"
-//        usageViewPresentation.isOpenInNewTab = false
-//        usageViewPresentation.isCodeUsages = false
-//        usageViewPresentation.isUsageTypeFilteringAvailable = false
-//        usageViewPresentation.codeUsagesString = "codeUsagesString"
-//        usageViewPresentation.contextText = "contextText"
-//        usageViewPresentation.nonCodeUsagesString = "nonCodeUsagesString"
-//        usageViewPresentation.scopeText = "scopeTest"
-//        usageViewPresentation.targetsNodeText = "targetsNodeText"
-//        val instance = UsageViewManager.getInstance(element?.project!!)
-//        instance.showUsages(
-//            UsageTarget.EMPTY_ARRAY,
-//            toArray,
-//            usageViewPresentation
-//        )
+internal fun showSubscribeUsages(usages: List<Usage>, relativePoint: RelativePoint) {
+    val columnInfo = arrayOf(
+        MyColumnInfo { "" },
+        MyColumnInfo { it.getType<UQualifiedReferenceExpression>()?.sourcePsi?.text ?: "" },
+        MyColumnInfo { ((it as? UsageInfo2UsageAdapter)?.line)?.plus(1)?.toString() ?: "" },
+        MyColumnInfo { it.getType<UClass>()?.name ?: "" })
+    showTablePopUp(usages, columnInfo).createPopup().show(relativePoint)
 }
 
-private fun Usage.psiElement(isPost: Boolean): PsiElement? {
-    val uElement = (this as? UsageInfo2UsageAdapter)?.usageInfo?.element?.toUElement()
-    val parentOfType = if (isPost) {
-        uElement?.getParentOfType<UQualifiedReferenceExpression>()
-    } else {
-        uElement?.getParentOfType<UMethod>()
-    }
-    return parentOfType?.sourcePsi
+internal fun showPostUsages(usages: List<Usage>, relativePoint: RelativePoint) {
+    val columnInfo = arrayOf(
+        MyColumnInfo { "" },
+        MyColumnInfo { it.getType<UMethod>()?.name ?: "" },
+        MyColumnInfo { (it as? UsageInfo2UsageAdapter)?.line?.plus(1)?.toString() ?: "" },
+        MyColumnInfo { it.getType<UClass>()?.name ?: "" })
+    showTablePopUp(usages, columnInfo).createPopup().show(relativePoint)
 }
 
-private fun showTablePopUp(usages: List<Usage>, isPost: Boolean): PopupChooserBuilder<*> {
+private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>): PopupChooserBuilder<*> {
     val table = JBTable()
     ScrollingUtil.installActions(table)
-    val columnInfos = getColumnInfos(isPost)
     table.model = ListTableModel(columnInfos, usages)
     table.tableHeader = null
     table.showHorizontalLines = false
@@ -75,31 +55,16 @@ private fun showTablePopUp(usages: List<Usage>, isPost: Boolean): PopupChooserBu
     resizeColumnWidth(table)
     table.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
 
-
     return JBPopupFactory.getInstance().createPopupChooserBuilder(table)
         .setTitle("Find Usages")
         .setMovable(true)
         .setResizable(true)
         .setItemChoosenCallback {
             val selectedRow = table.selectedRow
-
-            val valueAt = (table.model as? ListTableModel<Usage>)?.getItem(selectedRow)
-            valueAt?.navigate(true)
+            @Suppress("UNCHECKED_CAST")
+            val usage = (table.model as? ListTableModel<Usage>)?.getItem(selectedRow)
+            usage?.navigate(true)
         }
-}
-
-private fun getColumnInfos(isPost: Boolean): Array<MyColumnInfo> {
-    return arrayOf(
-        MyColumnInfo {
-            ""
-        },
-        MyColumnInfo {
-            it.psiElement(isPost)?.getLineNumber()?.toString() ?: ""
-        }, MyColumnInfo {
-            it.psiElement(isPost)?.text ?: ""
-        }, MyColumnInfo {
-            it.psiElement(isPost)?.containingFile?.name ?: ""
-        })
 }
 
 private class CellRenderer : TableCellRenderer {
@@ -151,4 +116,25 @@ private class MyColumnInfo(val value: (Usage) -> String) : ColumnInfo<Usage, Str
         }
         return item?.toString()
     }
+}
+
+
+private fun showInFindUsages() {
+    //        val toArray = usages.toArray(arrayOfNulls<Usage>(usages.size))
+//        val usageViewPresentation = UsageViewPresentation()
+//        usageViewPresentation.tabText = "Type"
+//        usageViewPresentation.isOpenInNewTab = false
+//        usageViewPresentation.isCodeUsages = false
+//        usageViewPresentation.isUsageTypeFilteringAvailable = false
+//        usageViewPresentation.codeUsagesString = "codeUsagesString"
+//        usageViewPresentation.contextText = "contextText"
+//        usageViewPresentation.nonCodeUsagesString = "nonCodeUsagesString"
+//        usageViewPresentation.scopeText = "scopeTest"
+//        usageViewPresentation.targetsNodeText = "targetsNodeText"
+//        val instance = UsageViewManager.getInstance(element?.project!!)
+//        instance.showUsages(
+//            UsageTarget.EMPTY_ARRAY,
+//            toArray,
+//            usageViewPresentation
+//        )
 }

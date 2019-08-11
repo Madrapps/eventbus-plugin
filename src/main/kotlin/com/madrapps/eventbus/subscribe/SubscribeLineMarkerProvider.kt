@@ -2,11 +2,11 @@ package com.madrapps.eventbus.subscribe
 
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.openapi.editor.markup.GutterIconRenderer.Alignment.RIGHT
+import com.intellij.openapi.util.IconLoader
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.ui.awt.RelativePoint
@@ -14,7 +14,7 @@ import com.intellij.usageView.UsageInfo
 import com.intellij.usages.UsageInfo2UsageAdapter
 import com.madrapps.eventbus.post.isPost
 import com.madrapps.eventbus.search
-import com.madrapps.eventbus.showUsages
+import com.madrapps.eventbus.showSubscribeUsages
 import org.jetbrains.uast.*
 import org.jetbrains.uast.UastVisibility.PUBLIC
 import java.awt.event.MouseEvent
@@ -60,7 +60,7 @@ private class SubscribeLineMarkerInfo(
 ) : LineMarkerInfo<PsiElement>(
     psiElement,
     psiElement.textRange,
-    AllIcons.General.ArrowLeft,
+    IconLoader.getIcon("/icons/greenrobot.png"),
     null,
     null,
     RIGHT
@@ -77,7 +77,7 @@ private class SubscribeLineMarkerInfo(
                             val usages = search(elementToSearch)
                                 .filter(UsageInfo::isPost)
                                 .map(::UsageInfo2UsageAdapter)
-                            showUsages(usages, RelativePoint(e.inputEvent as MouseEvent), true)
+                            showSubscribeUsages(usages, RelativePoint(e.inputEvent as MouseEvent))
                         }
                     }
                 }
