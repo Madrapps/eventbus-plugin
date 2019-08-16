@@ -10,6 +10,8 @@ import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.usageView.UsageInfo
 import com.intellij.usages.UsageInfo2UsageAdapter
+import com.madrapps.eventbus.getCallExpression
+import com.madrapps.eventbus.getParentOfTypeCallExpression
 import com.madrapps.eventbus.search
 import com.madrapps.eventbus.showPostUsages
 import com.madrapps.eventbus.subscribe.isSubscribe
@@ -20,8 +22,8 @@ class PostLineMarkerProvider : LineMarkerProvider {
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
         val uElement = element.toUElement() ?: return null
         if (element !is PsiExpressionStatement) {
-            val uCallExpression = uElement.getPostCallExpression()
-            if (uCallExpression != null) {
+            val uCallExpression = uElement.getCallExpression()
+            if (uCallExpression != null && uCallExpression.isPost()) {
                 val psiIdentifier = uCallExpression.methodIdentifier?.sourcePsi ?: return null
                 return PostLineMarkerInfo(psiIdentifier, uCallExpression)
             }
@@ -34,30 +36,15 @@ internal fun UsageInfo.isPost(): Boolean {
     val uElement = element.toUElement()
     if (uElement != null) {
         if (uElement.getParentOfType<UImportStatement>() == null) {
-            return uElement.getParentOfType<UQualifiedReferenceExpression>()?.getPostCallExpression() != null
+            return uElement.getParentOfTypeCallExpression()?.isPost() == true
         }
     }
     return false
 }
 
-private fun UElement.getPostCallExpression(): UCallExpression? {
-    fun UElement.getCallExpression(): UCallExpression? {
-        if (this is UCallExpression) {
-            if (getParentOfType<UQualifiedReferenceExpression>() == null) {
-                return this
-            }
-        } else if (this is UQualifiedReferenceExpression) {
-            return selector as? UCallExpression
-        }
-        return null
-    }
-    val uCallExpression = getCallExpression() ?: return null
-    if (uCallExpression.receiverType?.canonicalText == "org.greenrobot.eventbus.EventBus"
-        && (uCallExpression.methodName == "post" || uCallExpression.methodName == "postSticky")
-    ) {
-        return uCallExpression
-    }
-    return null
+private fun UCallExpression.isPost() : Boolean {
+    return receiverType?.canonicalText == "org.greenrobot.eventbus.EventBus"
+            && (methodName == "post" || methodName == "postSticky")
 }
 
 private class PostLineMarkerInfo(

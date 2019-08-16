@@ -14,7 +14,6 @@ import com.intellij.util.ui.ListTableModel
 import com.intellij.util.ui.UIUtil
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UMethod
-import org.jetbrains.uast.UQualifiedReferenceExpression
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -22,16 +21,15 @@ import java.awt.Insets
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTable
+import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.TableCellRenderer
 import kotlin.math.max
-import javax.swing.table.DefaultTableCellRenderer
-
 
 
 internal fun showSubscribeUsages(usages: List<Usage>, relativePoint: RelativePoint) {
     val columnInfo = arrayOf(
         MyColumnInfo { "" },
-        MyColumnInfo { it.getType<UQualifiedReferenceExpression>()?.sourcePsi?.text ?: "" },
+        MyColumnInfo { it.toUElement()?.getParentOfTypeCallExpression()?.sourcePsi?.text ?: "" },
         MyColumnInfo { ((it as? UsageInfo2UsageAdapter)?.line)?.plus(1)?.toString() ?: "" },
         MyColumnInfo { it.getType<UClass>()?.name ?: "" })
     showTablePopUp(usages, columnInfo).createPopup().show(relativePoint)
