@@ -41,13 +41,21 @@ internal fun UsageInfo.isPost(): Boolean {
 }
 
 private fun UElement.getPostCallExpression(): UCallExpression? {
-    if (this is UQualifiedReferenceExpression) {
-        val uCallExpression = selector as? UCallExpression ?: return null
-        if (uCallExpression.receiverType?.canonicalText == "org.greenrobot.eventbus.EventBus"
-            && (uCallExpression.methodName == "post" || uCallExpression.methodName == "postSticky")
-        ) {
-            return uCallExpression
+    fun UElement.getCallExpression(): UCallExpression? {
+        if (this is UCallExpression) {
+            if (getParentOfType<UQualifiedReferenceExpression>() == null) {
+                return this
+            }
+        } else if (this is UQualifiedReferenceExpression) {
+            return selector as? UCallExpression
         }
+        return null
+    }
+    val uCallExpression = getCallExpression() ?: return null
+    if (uCallExpression.receiverType?.canonicalText == "org.greenrobot.eventbus.EventBus"
+        && (uCallExpression.methodName == "post" || uCallExpression.methodName == "postSticky")
+    ) {
+        return uCallExpression
     }
     return null
 }
