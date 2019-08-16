@@ -31,7 +31,7 @@ class PostLineMarkerProvider : LineMarkerProvider {
             val uCallExpression = uElement.getCallExpression()
             if (uCallExpression != null && uCallExpression.isPost()) {
                 val psiIdentifier = uCallExpression.methodIdentifier?.sourcePsi ?: return null
-                return PostLineMarkerInfo(psiIdentifier, uCallExpression)
+                return PostLineMarkerInfo(psiIdentifier)
             }
         }
         return null
@@ -54,15 +54,16 @@ private fun UCallExpression.isPost() : Boolean {
 }
 
 private class PostLineMarkerInfo(
-    psiElement: PsiElement,
-    private val uElement: UCallExpression
+    psiElement: PsiElement
 ) : LineMarkerInfo<PsiElement>(
     psiElement,
     psiElement.textRange,
     IconLoader.getIcon("/icons/greenrobot.png"),
     Pass.LINE_MARKERS,
     null,
-    { event, _ ->
+    { event, element ->
+        val uElement = element.toUElement()?.getParentOfType<UCallExpression>()
+        if (uElement != null) {
         val elementToSearch = (uElement.valueArguments.firstOrNull()
             ?.getExpressionType() as PsiClassReferenceType).resolve()
         if (elementToSearch != null) {
@@ -75,6 +76,7 @@ private class PostLineMarkerInfo(
             } else {
                 showPostUsages(usages, RelativePoint(event))
             }
+        }
         }
     },
     RIGHT

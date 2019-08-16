@@ -29,7 +29,7 @@ class SubscribeLineMarkerProvider : LineMarkerProvider {
         if (uMethod != null) {
             val psiElement = uMethod.uastAnchor?.sourcePsi
             if (psiElement != null) {
-                return SubscribeLineMarkerInfo(psiElement, uMethod)
+                return SubscribeLineMarkerInfo(psiElement)
             }
         }
         return null
@@ -64,15 +64,16 @@ private fun UElement.getSubscribeMethod(): UMethod? {
 }
 
 private class SubscribeLineMarkerInfo(
-    psiElement: PsiElement,
-    private val uElement: UMethod
+    psiElement: PsiElement
 ) : LineMarkerInfo<PsiElement>(
     psiElement,
     psiElement.textRange,
     IconLoader.getIcon("/icons/greenrobot.png"),
     Pass.LINE_MARKERS,
     null,
-    { event, _ ->
+    { event, element ->
+        val uElement = element.toUElement()?.getParentOfType<UMethod>()
+        if (uElement != null) {
         val elementToSearch =
             (uElement.uastParameters[0].type as PsiClassReferenceType).reference.resolve()
         if (elementToSearch != null) {
@@ -84,6 +85,7 @@ private class SubscribeLineMarkerInfo(
             } else {
                 showSubscribeUsages(usages, RelativePoint(event))
             }
+        }
         }
     },
     RIGHT
