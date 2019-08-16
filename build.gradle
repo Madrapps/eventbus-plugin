@@ -31,7 +31,10 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
+
 patchPluginXml {
     changeNotes """
+      - Support for `with(EventBus.getDefault()) { post() }` <br>
+      - Fixed the old references bug <br>
     """
 }
