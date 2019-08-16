@@ -15,7 +15,10 @@ import com.madrapps.eventbus.getParentOfTypeCallExpression
 import com.madrapps.eventbus.search
 import com.madrapps.eventbus.showPostUsages
 import com.madrapps.eventbus.subscribe.isSubscribe
-import org.jetbrains.uast.*
+import org.jetbrains.uast.UCallExpression
+import org.jetbrains.uast.UImportStatement
+import org.jetbrains.uast.getParentOfType
+import org.jetbrains.uast.toUElement
 
 class PostLineMarkerProvider : LineMarkerProvider {
 
@@ -25,7 +28,7 @@ class PostLineMarkerProvider : LineMarkerProvider {
             val uCallExpression = uElement.getCallExpression()
             if (uCallExpression != null && uCallExpression.isPost()) {
                 val psiIdentifier = uCallExpression.methodIdentifier?.sourcePsi ?: return null
-                return PostLineMarkerInfo(psiIdentifier, uCallExpression)
+                return PostLineMarkerInfo(psiIdentifier)
             }
         }
         return null
@@ -42,31 +45,33 @@ internal fun UsageInfo.isPost(): Boolean {
     return false
 }
 
-private fun UCallExpression.isPost() : Boolean {
+private fun UCallExpression.isPost(): Boolean {
     return receiverType?.canonicalText == "org.greenrobot.eventbus.EventBus"
             && (methodName == "post" || methodName == "postSticky")
 }
 
 private class PostLineMarkerInfo(
-    psiElement: PsiElement,
-    private val uElement: UCallExpression
+    psiElement: PsiElement
 ) : LineMarkerInfo<PsiElement>(
     psiElement,
     psiElement.textRange,
     IconLoader.getIcon("/icons/greenrobot.png"),
     null,
-    { event, _ ->
-        val elementToSearch = (uElement.valueArguments.firstOrNull()
-            ?.getExpressionType() as PsiClassReferenceType).resolve()
-        if (elementToSearch != null) {
-            val collection = search(elementToSearch)
-            val usages = collection
-                .filter(UsageInfo::isSubscribe)
-                .map(::UsageInfo2UsageAdapter)
-            if (usages.size == 1) {
-                usages.first().navigate(true)
-            } else {
-                showPostUsages(usages, RelativePoint(event))
+    { event, element ->
+        val uElement = element.toUElement()?.getParentOfType<UCallExpression>()
+        if (uElement != null) {
+            val elementToSearch = (uElement.valueArguments.firstOrNull()
+                ?.getExpressionType() as PsiClassReferenceType).resolve()
+            if (elementToSearch != null) {
+                val collection = search(elementToSearch)
+                val usages = collection
+                    .filter(UsageInfo::isSubscribe)
+                    .map(::UsageInfo2UsageAdapter)
+                if (usages.size == 1) {
+                    usages.first().navigate(true)
+                } else {
+                    showPostUsages(usages, RelativePoint(event))
+                }
             }
         }
     },

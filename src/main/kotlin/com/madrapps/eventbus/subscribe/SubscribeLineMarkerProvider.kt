@@ -23,7 +23,7 @@ class SubscribeLineMarkerProvider : LineMarkerProvider {
         if (uMethod != null) {
             val psiElement = uMethod.uastAnchor?.sourcePsi
             if (psiElement != null) {
-                return SubscribeLineMarkerInfo(psiElement, uMethod)
+                return SubscribeLineMarkerInfo(psiElement)
             }
         }
         return null
@@ -58,24 +58,26 @@ private fun UElement.getSubscribeMethod(): UMethod? {
 }
 
 private class SubscribeLineMarkerInfo(
-    psiElement: PsiElement,
-    private val uElement: UMethod
+    psiElement: PsiElement
 ) : LineMarkerInfo<PsiElement>(
     psiElement,
     psiElement.textRange,
     IconLoader.getIcon("/icons/greenrobot.png"),
     null,
-    { event, _ ->
-        val elementToSearch =
-            (uElement.uastParameters[0].type as PsiClassReferenceType).reference.resolve()
-        if (elementToSearch != null) {
-            val usages = search(elementToSearch)
-                .filter(UsageInfo::isPost)
-                .map(::UsageInfo2UsageAdapter)
-            if (usages.size == 1) {
-                usages.first().navigate(true)
-            } else {
-                showSubscribeUsages(usages, RelativePoint(event))
+    { event, element ->
+        val uElement = element.toUElement()?.getParentOfType<UMethod>()
+        if (uElement != null) {
+            val elementToSearch =
+                (uElement.uastParameters[0].type as PsiClassReferenceType).reference.resolve()
+            if (elementToSearch != null) {
+                val usages = search(elementToSearch)
+                    .filter(UsageInfo::isPost)
+                    .map(::UsageInfo2UsageAdapter)
+                if (usages.size == 1) {
+                    usages.first().navigate(true)
+                } else {
+                    showSubscribeUsages(usages, RelativePoint(event))
+                }
             }
         }
     },
