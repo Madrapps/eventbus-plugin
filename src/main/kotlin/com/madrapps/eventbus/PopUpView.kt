@@ -13,7 +13,9 @@ import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
 import com.intellij.util.ui.UIUtil
 import org.jetbrains.uast.UClass
+import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.getIoFile
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -31,7 +33,8 @@ internal fun showSubscribeUsages(usages: List<Usage>, relativePoint: RelativePoi
         MyColumnInfo { "" },
         MyColumnInfo { it.toUElement()?.getParentOfTypeCallExpression()?.sourcePsi?.text ?: "" },
         MyColumnInfo { ((it as? UsageInfo2UsageAdapter)?.line)?.plus(1)?.toString() ?: "" },
-        MyColumnInfo { it.getType<UClass>()?.name ?: "" })
+        MyColumnInfo(::className)
+    )
     showTablePopUp(usages, columnInfo).createPopup().show(relativePoint)
 }
 
@@ -40,8 +43,15 @@ internal fun showPostUsages(usages: List<Usage>, relativePoint: RelativePoint) {
         MyColumnInfo { "" },
         MyColumnInfo { it.getType<UMethod>()?.name ?: "" },
         MyColumnInfo { (it as? UsageInfo2UsageAdapter)?.line?.plus(1)?.toString() ?: "" },
-        MyColumnInfo { it.getType<UClass>()?.name ?: "" })
+        MyColumnInfo(::className)
+    )
     showTablePopUp(usages, columnInfo).createPopup().show(relativePoint)
+}
+
+private fun className(it: Usage): String {
+    val className = it.getType<UClass>()?.name
+    val fileName = it.getType<UFile>()?.getIoFile()?.nameWithoutExtension
+    return className ?: fileName ?: ""
 }
 
 private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>): PopupChooserBuilder<*> {
