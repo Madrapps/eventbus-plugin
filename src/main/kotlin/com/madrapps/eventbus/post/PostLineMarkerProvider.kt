@@ -2,6 +2,8 @@ package com.madrapps.eventbus.post
 
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.markup.GutterIconRenderer.Alignment.RIGHT
 import com.intellij.openapi.util.IconLoader
 import com.intellij.psi.PsiElement
@@ -10,6 +12,7 @@ import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.usageView.UsageInfo
 import com.intellij.usages.UsageInfo2UsageAdapter
+import com.intellij.util.concurrency.AppExecutorUtil
 import com.madrapps.eventbus.getCallExpression
 import com.madrapps.eventbus.getParentOfTypeCallExpression
 import com.madrapps.eventbus.search
@@ -58,22 +61,27 @@ private class PostLineMarkerInfo(
     IconLoader.getIcon("/icons/greenrobot.png"),
     null,
     { event, element ->
-        val uElement = element.toUElement()?.getParentOfType<UCallExpression>()
-        if (uElement != null) {
-            val elementToSearch = (uElement.valueArguments.firstOrNull()
-                ?.getExpressionType() as PsiClassReferenceType).resolve()
-            if (elementToSearch != null) {
-                val collection = search(elementToSearch)
-                val usages = collection
-                    .filter(UsageInfo::isSubscribe)
-                    .map(::UsageInfo2UsageAdapter)
+        ReadAction.nonBlocking {
+            var usages = emptyList<UsageInfo2UsageAdapter>()
+            val uElement = element.toUElement()?.getParentOfType<UCallExpression>()
+            if (uElement != null) {
+                val elementToSearch = (uElement.valueArguments.firstOrNull()
+                    ?.getExpressionType() as PsiClassReferenceType).resolve()
+                if (elementToSearch != null) {
+                    val collection = search(elementToSearch)
+                    usages = collection
+                        .filter(UsageInfo::isSubscribe)
+                        .map(::UsageInfo2UsageAdapter)
+                }
+            }
+            ApplicationManager.getApplication().invokeLater {
                 if (usages.size == 1) {
                     usages.first().navigate(true)
                 } else {
                     showPostUsages(usages, RelativePoint(event))
                 }
             }
-        }
+        }.inSmartMode(element.project).submit(AppExecutorUtil.getAppExecutorService())
     },
     RIGHT
 )
