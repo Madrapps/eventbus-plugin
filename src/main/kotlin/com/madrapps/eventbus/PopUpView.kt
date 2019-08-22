@@ -30,7 +30,6 @@ import kotlin.math.max
 
 internal fun showSubscribeUsages(usages: List<Usage>, relativePoint: RelativePoint) {
     val columnInfo = arrayOf(
-        MyColumnInfo { "" },
         MyColumnInfo { it.toUElement()?.getParentOfTypeCallExpression()?.sourcePsi?.text ?: "" },
         MyColumnInfo { ((it as? UsageInfo2UsageAdapter)?.line)?.plus(1)?.toString() ?: "" },
         MyColumnInfo(::className)
@@ -40,7 +39,6 @@ internal fun showSubscribeUsages(usages: List<Usage>, relativePoint: RelativePoi
 
 internal fun showPostUsages(usages: List<Usage>, relativePoint: RelativePoint) {
     val columnInfo = arrayOf(
-        MyColumnInfo { "" },
         MyColumnInfo { it.getType<UMethod>()?.name ?: "" },
         MyColumnInfo { (it as? UsageInfo2UsageAdapter)?.line?.plus(1)?.toString() ?: "" },
         MyColumnInfo(::className)
@@ -67,7 +65,6 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
     table.columnModel.getColumn(0).cellRenderer = cellRenderer
     table.columnModel.getColumn(1).cellRenderer = cellRenderer
     table.columnModel.getColumn(2).cellRenderer = cellRenderer
-    table.columnModel.getColumn(3).cellRenderer = cellRenderer
     resizeColumnWidth(table)
     table.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
 
@@ -105,25 +102,23 @@ private class CellRenderer : TableCellRenderer {
         panel.foreground = fg
 
         val textChunks = SimpleColoredComponent()
-        textChunks.ipad = Insets(0, 3, 0, 0)
+        val offset = 2
+        textChunks.ipad = Insets(offset, offset, offset, 0)
+        textChunks.size = Dimension(PlatformIcons.METHOD_ICON.iconWidth, PlatformIcons.METHOD_ICON.iconHeight)
 
         when (column) {
             0 -> {
                 textChunks.icon = PlatformIcons.METHOD_ICON
-                textChunks.border = null
-                textChunks.size = Dimension(PlatformIcons.METHOD_ICON.iconWidth, PlatformIcons.METHOD_ICON.iconHeight)
-            }
-            1 -> {
-                textChunks.ipad = Insets(0, 0, 0, 15)
+                textChunks.ipad = Insets(offset, 0, offset, 15)
                 val attributes = if (isSelected) REGULAR_ITALIC_ATTRIBUTES else REGULAR_ATTRIBUTES
                 textChunks.append(value.toString(), attributes)
             }
-            2 -> {
+            1 -> {
                 val attributes = if (isSelected) REGULAR_ATTRIBUTES else REGULAR_ITALIC_ATTRIBUTES
-                textChunks.ipad = Insets(0, 0, 0, 15)
+                textChunks.ipad = Insets(offset, 0, offset, 15)
                 textChunks.append(value.toString(), attributes)
             }
-            3 -> {
+            2 -> {
                 textChunks.append(value.toString())
                 (panel.layout as FlowLayout).alignment = FlowLayout.RIGHT
             }
