@@ -6,9 +6,9 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.markup.GutterIconRenderer.Alignment.RIGHT
 import com.intellij.openapi.util.IconLoader
+import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiExpressionStatement
-import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.usageView.UsageInfo
 import com.intellij.usages.UsageInfo2UsageAdapter
@@ -18,10 +18,7 @@ import com.madrapps.eventbus.getParentOfTypeCallExpression
 import com.madrapps.eventbus.search
 import com.madrapps.eventbus.showPostUsages
 import com.madrapps.eventbus.subscribe.isSubscribe
-import org.jetbrains.uast.UCallExpression
-import org.jetbrains.uast.UImportStatement
-import org.jetbrains.uast.getParentOfType
-import org.jetbrains.uast.toUElement
+import org.jetbrains.uast.*
 
 class PostLineMarkerProvider : LineMarkerProvider {
 
@@ -65,14 +62,20 @@ private class PostLineMarkerInfo(
             var usages = emptyList<UsageInfo2UsageAdapter>()
             val uElement = element.toUElement()?.getParentOfType<UCallExpression>()
             if (uElement != null) {
-                val elementToSearch = (uElement.valueArguments.firstOrNull()
-                    ?.getExpressionType() as PsiClassReferenceType).resolve()
-                if (elementToSearch != null) {
-                    val collection = search(elementToSearch)
-                    usages = collection
-                        .filter(UsageInfo::isSubscribe)
-                        .map(::UsageInfo2UsageAdapter)
+                val argument = uElement.valueArguments.firstOrNull()
+                val elementsToSearch: List<PsiElement> = if (argument is UQualifiedReferenceExpression) {
+                    val sourcePsi = (argument.receiver as USimpleNameReferenceExpression).sourcePsi
+                    sourcePsi?.references?.mapNotNull { it.resolve() } ?: emptyList()
+                } else {
+                    val resolve = (argument?.getExpressionType() as PsiClassType).resolve()
+                    if (resolve != null) {
+                        listOf(resolve)
+                    } else emptyList()
                 }
+                val collection = search(elementsToSearch)
+                usages = collection
+                    .filter(UsageInfo::isSubscribe)
+                    .map(::UsageInfo2UsageAdapter)
             }
             ApplicationManager.getApplication().invokeLater {
                 if (usages.size == 1) {
