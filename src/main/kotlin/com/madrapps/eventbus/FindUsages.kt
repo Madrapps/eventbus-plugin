@@ -8,6 +8,13 @@ import com.intellij.usages.UsageInfo2UsageAdapter
 import org.jetbrains.uast.*
 import org.jetbrains.uast.UastCallKind.Companion.METHOD_CALL
 
+internal fun search(elements: List<PsiElement>): Collection<UsageInfo> {
+    val references = elements.flatMap {
+        ReferencesSearch.search(it).findAll()
+    }
+    return references.map(::UsageInfo)
+}
+
 internal fun search(element: PsiElement): Collection<UsageInfo> {
     val references = ReferencesSearch.search(element).findAll()
     return references.map(::UsageInfo)
@@ -33,14 +40,12 @@ internal fun UElement.getCallExpression(): UCallExpression? {
 }
 
 internal fun UElement.getParentOfTypeCallExpression(): UCallExpression? {
-    val find = withContainingElements
+    return withContainingElements
         .filterIsInstance<UCallExpression>()
         .find {
-            it.kind == METHOD_CALL && it.getParentOfType<UQualifiedReferenceExpression>() == null
-        }
-    val uCallExpression = withContainingElements
+            it.kind == METHOD_CALL //&& it.getParentOfType<UQualifiedReferenceExpression>() == null
+        } ?: withContainingElements
         .filterIsInstance<UQualifiedReferenceExpression>()
         .firstOrNull()
         ?.selector as? UCallExpression
-    return find ?: uCallExpression
 }

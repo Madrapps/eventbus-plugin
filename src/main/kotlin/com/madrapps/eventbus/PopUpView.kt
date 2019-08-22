@@ -1,68 +1,84 @@
 package com.madrapps.eventbus
 
+import com.intellij.icons.AllIcons.Toolwindows.ToolWindowFind
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces.USAGE_VIEW_TOOLBAR
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.IdeActions.ACTION_FIND_USAGES
+import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
-import com.intellij.openapi.ui.popup.PopupChooserBuilder
 import com.intellij.ui.ScrollingUtil
 import com.intellij.ui.SimpleColoredComponent
+import com.intellij.ui.SimpleTextAttributes.REGULAR_ATTRIBUTES
+import com.intellij.ui.SimpleTextAttributes.REGULAR_ITALIC_ATTRIBUTES
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.table.JBTable
-import com.intellij.usages.Usage
-import com.intellij.usages.UsageInfo2UsageAdapter
+import com.intellij.usages.*
 import com.intellij.util.PlatformIcons
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
 import com.intellij.util.ui.UIUtil
 import org.jetbrains.uast.UClass
+import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.getIoFile
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Insets
-import javax.swing.JLabel
+import java.awt.event.InputEvent
 import javax.swing.JPanel
 import javax.swing.JTable
-import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.TableCellRenderer
 import kotlin.math.max
 
 
 internal fun showSubscribeUsages(usages: List<Usage>, relativePoint: RelativePoint) {
     val columnInfo = arrayOf(
-        MyColumnInfo { "" },
         MyColumnInfo { it.toUElement()?.getParentOfTypeCallExpression()?.sourcePsi?.text ?: "" },
         MyColumnInfo { ((it as? UsageInfo2UsageAdapter)?.line)?.plus(1)?.toString() ?: "" },
-        MyColumnInfo { it.getType<UClass>()?.name ?: "" })
-    showTablePopUp(usages, columnInfo).createPopup().show(relativePoint)
+        MyColumnInfo(::className)
+    )
+    showTablePopUp(usages, columnInfo).show(relativePoint)
 }
 
 internal fun showPostUsages(usages: List<Usage>, relativePoint: RelativePoint) {
     val columnInfo = arrayOf(
-        MyColumnInfo { "" },
         MyColumnInfo { it.getType<UMethod>()?.name ?: "" },
         MyColumnInfo { (it as? UsageInfo2UsageAdapter)?.line?.plus(1)?.toString() ?: "" },
-        MyColumnInfo { it.getType<UClass>()?.name ?: "" })
-    showTablePopUp(usages, columnInfo).createPopup().show(relativePoint)
+        MyColumnInfo(::className)
+    )
+    showTablePopUp(usages, columnInfo).show(relativePoint)
 }
 
-private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>): PopupChooserBuilder<*> {
-    val table = JBTable()
-    ScrollingUtil.installActions(table)
-    table.model = ListTableModel(columnInfos, usages)
-    table.tableHeader = null
-    table.showHorizontalLines = false
-    table.showVerticalLines = false
-    table.intercellSpacing = Dimension(0, 0)
-    table.rowHeight = PlatformIcons.METHOD_ICON.iconHeight + 2
-    table.setShowGrid(false)
-    table.columnModel.getColumn(0).cellRenderer = CellRenderer()
-    resizeColumnWidth(table)
-    table.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
+private fun className(it: Usage): String {
+    val className = it.getType<UClass>()?.name
+    val fileName = it.getType<UFile>()?.getIoFile()?.nameWithoutExtension
+    return className ?: fileName ?: ""
+}
 
-    val rightRenderer = DefaultTableCellRenderer()
-    rightRenderer.horizontalAlignment = JLabel.RIGHT
-    table.columnModel.getColumn(3).cellRenderer = rightRenderer
+private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>): JBPopup {
+    var popUp: JBPopup? = null
 
-    return JBPopupFactory.getInstance().createPopupChooserBuilder(table)
+    val table = JBTable().apply {
+        ScrollingUtil.installActions(this)
+        model = ListTableModel(columnInfos, usages)
+        tableHeader = null
+        showHorizontalLines = false
+        showVerticalLines = false
+        intercellSpacing = Dimension(0, 0)
+        setShowGrid(false)
+        val cellRenderer = CellRenderer()
+        columnModel.getColumn(0).cellRenderer = cellRenderer
+        columnModel.getColumn(1).cellRenderer = cellRenderer
+        columnModel.getColumn(2).cellRenderer = cellRenderer
+        resizeColumnWidth(this)
+        autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
+    }
+
+    val builder = JBPopupFactory.getInstance().createPopupChooserBuilder(table)
         .setTitle(getTitle(usages))
         .setMovable(true)
         .setResizable(true)
@@ -72,38 +88,22 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
             val usage = (table.model as? ListTableModel<Usage>)?.getItem(selectedRow)
             usage?.navigate(true)
         }
-}
 
-private fun getTitle(usages: List<Usage>): String {
-    return if (usages.isEmpty()) "No usages found" else "Find Usages"
-}
+    if (usages.isNotEmpty()) {
+        val actionGroup = DefaultActionGroup()
+        actionGroup.add(ShowUsagesAction(usages) { popUp?.closeOk(it) })
+        val actionToolbar = ActionManager.getInstance().createActionToolbar(USAGE_VIEW_TOOLBAR, actionGroup, true)
+        actionToolbar.setReservePlaceAutoPopupIcon(false)
+        val toolBar = actionToolbar.component
+        toolBar.isOpaque = false
 
-private class CellRenderer : TableCellRenderer {
-
-    override fun getTableCellRendererComponent(
-        list: JTable,
-        value: Any,
-        isSelected: Boolean,
-        hasFocus: Boolean,
-        row: Int,
-        column: Int
-    ): Component {
-        val panel = JPanel(FlowLayout(FlowLayout.CENTER, 0, 0))
-
-        val bg = UIUtil.getListSelectionBackground()
-        val fg = UIUtil.getListSelectionForeground()
-        panel.background = if (isSelected) bg else list.background
-        panel.foreground = if (isSelected) fg else list.foreground
-
-        val textChunks = SimpleColoredComponent()
-        textChunks.ipad = Insets(0, 2, 0, 0)
-        textChunks.icon = PlatformIcons.METHOD_ICON
-        textChunks.border = null
-        textChunks.size = Dimension(PlatformIcons.METHOD_ICON.iconWidth, PlatformIcons.METHOD_ICON.iconHeight)
-        panel.add(textChunks)
-        return panel
+        builder.setSettingButton(toolBar)
     }
+    popUp = builder.createPopup()
+    return popUp
 }
+
+private fun getTitle(usages: List<Usage>) = if (usages.isEmpty()) "No usages found" else "Find Usages"
 
 private fun resizeColumnWidth(table: JTable) {
     val columnModel = table.columnModel
@@ -129,23 +129,74 @@ private class MyColumnInfo(val value: (Usage) -> String) : ColumnInfo<Usage, Str
     }
 }
 
+private class CellRenderer : TableCellRenderer {
 
-private fun showInFindUsages() {
-    //        val toArray = usages.toArray(arrayOfNulls<Usage>(usages.size))
-//        val usageViewPresentation = UsageViewPresentation()
-//        usageViewPresentation.tabText = "Type"
-//        usageViewPresentation.isOpenInNewTab = false
-//        usageViewPresentation.isCodeUsages = false
-//        usageViewPresentation.isUsageTypeFilteringAvailable = false
-//        usageViewPresentation.codeUsagesString = "codeUsagesString"
-//        usageViewPresentation.contextText = "contextText"
-//        usageViewPresentation.nonCodeUsagesString = "nonCodeUsagesString"
-//        usageViewPresentation.scopeText = "scopeTest"
-//        usageViewPresentation.targetsNodeText = "targetsNodeText"
-//        val instance = UsageViewManager.getInstance(element?.project!!)
-//        instance.showUsages(
-//            UsageTarget.EMPTY_ARRAY,
-//            toArray,
-//            usageViewPresentation
-//        )
+    override fun getTableCellRendererComponent(
+        list: JTable,
+        value: Any,
+        isSelected: Boolean,
+        hasFocus: Boolean,
+        row: Int,
+        column: Int
+    ): Component {
+        val panel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+
+        val bg = if (isSelected) UIUtil.getListSelectionBackground() else list.background
+        val fg = if (isSelected) UIUtil.getListSelectionForeground() else list.foreground
+        panel.background = bg
+        panel.foreground = fg
+
+        val textChunks = SimpleColoredComponent()
+        val offset = 2
+        textChunks.ipad = Insets(offset, offset, offset, 0)
+        textChunks.size = Dimension(PlatformIcons.METHOD_ICON.iconWidth, PlatformIcons.METHOD_ICON.iconHeight)
+
+        when (column) {
+            0 -> {
+                textChunks.icon = PlatformIcons.METHOD_ICON
+                textChunks.ipad = Insets(offset, 0, offset, 15)
+                val attributes = if (isSelected) REGULAR_ITALIC_ATTRIBUTES else REGULAR_ATTRIBUTES
+                textChunks.append(value.toString(), attributes)
+            }
+            1 -> {
+                val attributes = if (isSelected) REGULAR_ATTRIBUTES else REGULAR_ITALIC_ATTRIBUTES
+                textChunks.ipad = Insets(offset, 0, offset, 15)
+                textChunks.append(value.toString(), attributes)
+            }
+            2 -> {
+                textChunks.append(value.toString())
+                (panel.layout as FlowLayout).alignment = FlowLayout.RIGHT
+            }
+        }
+
+        panel.add(textChunks)
+        return panel
+    }
+}
+
+private class ShowUsagesAction(
+    private val usages: List<Usage>,
+    private val closePopUp: (InputEvent) -> Unit
+) : AnAction(
+    "Open Find Usages",
+    "Show all usages in a separate tool window",
+    ToolWindowFind
+) {
+    init {
+        shortcutSet = ActionManager.getInstance().getAction(ACTION_FIND_USAGES).shortcutSet
+    }
+
+    override fun actionPerformed(e: AnActionEvent) {
+        closePopUp(e.inputEvent)
+        val toArray = usages.toTypedArray()
+        val usageViewPresentation = UsageViewPresentation()
+        usageViewPresentation.tabText = "Type"
+        usageViewPresentation.isOpenInNewTab = false
+        val instance = UsageViewManager.getInstance(e.project!!)
+        instance.showUsages(
+            UsageTarget.EMPTY_ARRAY,
+            toArray,
+            usageViewPresentation
+        )
+    }
 }
