@@ -62,9 +62,11 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
     table.showVerticalLines = false
     table.intercellSpacing = Dimension(0, 0)
     table.setShowGrid(false)
-    table.columnModel.getColumn(0).cellRenderer = CellRenderer()
-    table.columnModel.getColumn(2).cellRenderer = CellRenderer()
-    table.columnModel.getColumn(3).cellRenderer = CellRenderer()
+    val cellRenderer = CellRenderer()
+    table.columnModel.getColumn(0).cellRenderer = cellRenderer
+    table.columnModel.getColumn(1).cellRenderer = cellRenderer
+    table.columnModel.getColumn(2).cellRenderer = cellRenderer
+    table.columnModel.getColumn(3).cellRenderer = cellRenderer
     resizeColumnWidth(table)
     table.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
 
@@ -110,8 +112,13 @@ private class CellRenderer : TableCellRenderer {
                 textChunks.border = null
                 textChunks.size = Dimension(PlatformIcons.METHOD_ICON.iconWidth, PlatformIcons.METHOD_ICON.iconHeight)
             }
+            1 -> {
+                textChunks.ipad = Insets(0, 0, 0, 15)
+                textChunks.append(value.toString())
+            }
             2 -> {
                 val attributes = SimpleTextAttributes(bg, fg, fg, SimpleTextAttributes.STYLE_ITALIC)
+                textChunks.ipad = Insets(0, 0, 0, 15)
                 textChunks.append(value.toString(), attributes)
             }
             3 -> {
