@@ -34,9 +34,10 @@ compileTestKotlin {
 
 patchPluginXml {
     changeNotes """
-      - Support for `@file:JvmName()` <br>
-      - Performance improvement <br>
       - Option to view usages in "Find" tool window <br>
       - Improved the UI of the usages popup <br>
+      - Support for Enums <br>
+      - Support for `@file:JvmName()` <br>
+      - Performance improvement <br>
     """
 }
