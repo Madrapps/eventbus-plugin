@@ -17,11 +17,12 @@ import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.getIoFile
-import java.awt.*
-import javax.swing.JLabel
+import java.awt.Component
+import java.awt.Dimension
+import java.awt.FlowLayout
+import java.awt.Insets
 import javax.swing.JPanel
 import javax.swing.JTable
-import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.TableCellRenderer
 import kotlin.math.max
 
@@ -63,12 +64,9 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
     table.setShowGrid(false)
     table.columnModel.getColumn(0).cellRenderer = CellRenderer()
     table.columnModel.getColumn(2).cellRenderer = CellRenderer()
+    table.columnModel.getColumn(3).cellRenderer = CellRenderer()
     resizeColumnWidth(table)
     table.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
-
-    val rightRenderer = DefaultTableCellRenderer()
-    rightRenderer.horizontalAlignment = JLabel.RIGHT
-    table.columnModel.getColumn(3).cellRenderer = rightRenderer
 
     return JBPopupFactory.getInstance().createPopupChooserBuilder(table)
         .setTitle(getTitle(usages))
@@ -115,6 +113,10 @@ private class CellRenderer : TableCellRenderer {
             2 -> {
                 val attributes = SimpleTextAttributes(bg, fg, fg, SimpleTextAttributes.STYLE_ITALIC)
                 textChunks.append(value.toString(), attributes)
+            }
+            3 -> {
+                textChunks.append(value.toString())
+                (panel.layout as FlowLayout).alignment = FlowLayout.RIGHT
             }
         }
 
