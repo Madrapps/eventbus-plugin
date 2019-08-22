@@ -4,6 +4,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.PopupChooserBuilder
 import com.intellij.ui.ScrollingUtil
 import com.intellij.ui.SimpleColoredComponent
+import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.table.JBTable
 import com.intellij.usages.Usage
@@ -16,10 +17,7 @@ import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.getIoFile
-import java.awt.Component
-import java.awt.Dimension
-import java.awt.FlowLayout
-import java.awt.Insets
+import java.awt.*
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTable
@@ -64,6 +62,7 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
     table.intercellSpacing = Dimension(0, 0)
     table.setShowGrid(false)
     table.columnModel.getColumn(0).cellRenderer = CellRenderer()
+    table.columnModel.getColumn(2).cellRenderer = CellRenderer()
     resizeColumnWidth(table)
     table.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
 
@@ -99,16 +98,26 @@ private class CellRenderer : TableCellRenderer {
     ): Component {
         val panel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
 
-        val bg = UIUtil.getListSelectionBackground()
-        val fg = UIUtil.getListSelectionForeground()
-        panel.background = if (isSelected) bg else list.background
-        panel.foreground = if (isSelected) fg else list.foreground
+        val bg = if (isSelected) UIUtil.getListSelectionBackground() else list.background
+        val fg = if (isSelected) UIUtil.getListSelectionForeground() else list.foreground
+        panel.background = bg
+        panel.foreground = fg
 
         val textChunks = SimpleColoredComponent()
         textChunks.ipad = Insets(0, 3, 0, 0)
-        textChunks.icon = PlatformIcons.METHOD_ICON
-        textChunks.border = null
-        textChunks.size = Dimension(PlatformIcons.METHOD_ICON.iconWidth, PlatformIcons.METHOD_ICON.iconHeight)
+
+        when (column) {
+            0 -> {
+                textChunks.icon = PlatformIcons.METHOD_ICON
+                textChunks.border = null
+                textChunks.size = Dimension(PlatformIcons.METHOD_ICON.iconWidth, PlatformIcons.METHOD_ICON.iconHeight)
+            }
+            2 -> {
+                val attributes = SimpleTextAttributes(bg, fg, fg, SimpleTextAttributes.STYLE_ITALIC)
+                textChunks.append(value.toString(), attributes)
+            }
+        }
+
         panel.add(textChunks)
         return panel
     }
