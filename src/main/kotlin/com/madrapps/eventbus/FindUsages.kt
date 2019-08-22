@@ -40,14 +40,12 @@ internal fun UElement.getCallExpression(): UCallExpression? {
 }
 
 internal fun UElement.getParentOfTypeCallExpression(): UCallExpression? {
-    val find = withContainingElements
+    return withContainingElements
         .filterIsInstance<UCallExpression>()
         .find {
-            it.kind == METHOD_CALL && it.getParentOfType<UQualifiedReferenceExpression>() == null
-        }
-    val uCallExpression = withContainingElements
+            it.kind == METHOD_CALL //&& it.getParentOfType<UQualifiedReferenceExpression>() == null
+        } ?: withContainingElements
         .filterIsInstance<UQualifiedReferenceExpression>()
         .firstOrNull()
         ?.selector as? UCallExpression
-    return find ?: uCallExpression
 }
