@@ -4,7 +4,8 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.PopupChooserBuilder
 import com.intellij.ui.ScrollingUtil
 import com.intellij.ui.SimpleColoredComponent
-import com.intellij.ui.SimpleTextAttributes
+import com.intellij.ui.SimpleTextAttributes.REGULAR_ATTRIBUTES
+import com.intellij.ui.SimpleTextAttributes.REGULAR_ITALIC_ATTRIBUTES
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.table.JBTable
 import com.intellij.usages.Usage
@@ -114,10 +115,11 @@ private class CellRenderer : TableCellRenderer {
             }
             1 -> {
                 textChunks.ipad = Insets(0, 0, 0, 15)
-                textChunks.append(value.toString())
+                val attributes = if (isSelected) REGULAR_ITALIC_ATTRIBUTES else REGULAR_ATTRIBUTES
+                textChunks.append(value.toString(), attributes)
             }
             2 -> {
-                val attributes = SimpleTextAttributes(bg, fg, fg, SimpleTextAttributes.STYLE_ITALIC)
+                val attributes = if (isSelected) REGULAR_ATTRIBUTES else REGULAR_ITALIC_ATTRIBUTES
                 textChunks.ipad = Insets(0, 0, 0, 15)
                 textChunks.append(value.toString(), attributes)
             }
