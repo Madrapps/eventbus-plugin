@@ -100,9 +100,11 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
 
     if (usages.isNotEmpty()) {
         val actionGroup = DefaultActionGroup()
-        actionGroup.add(SetBreakpointAction(usages) { popUp?.closeOk(it) })
+        val closePopUp: (InputEvent) -> Unit = { popUp?.closeOk(it) }
+        actionGroup.add(SetBreakpointAction(usages, closePopUp))
+        actionGroup.add(RemoveBreakpointAction(usages, closePopUp))
         actionGroup.addSeparator()
-        actionGroup.add(ShowUsagesAction(usages) { popUp?.closeOk(it) })
+        actionGroup.add(ShowUsagesAction(usages, closePopUp))
         val actionToolbar = ActionManager.getInstance().createActionToolbar(USAGE_VIEW_TOOLBAR, actionGroup, true)
         actionToolbar.setReservePlaceAutoPopupIcon(false)
         val toolBar = actionToolbar.component
@@ -224,12 +226,14 @@ private class SetBreakpointAction(
         closePopUp(e.inputEvent)
         val breakpointManager = DebuggerManagerEx.getInstanceEx(e.project!!).breakpointManager
         usages.forEach {
-            val containingFile = it.toUElement()?.sourcePsi?.containingFile
+            val containingFile = it.file()
             if (containingFile != null) {
                 val document = PsiDocumentManager.getInstance(e.project!!).getDocument(containingFile)
-                val isBreakpointAdded = addLineBreakpoint(it, breakpointManager, document)
-                if (!isBreakpointAdded) {
-                    addMethodBreakpoint(it, breakpointManager, document)
+                if (document != null) {
+                    val isBreakpointAdded = addLineBreakpoint(it, breakpointManager, document)
+                    if (!isBreakpointAdded) {
+                        addMethodBreakpoint(it, breakpointManager, document)
+                    }
                 }
             }
         }
@@ -238,9 +242,9 @@ private class SetBreakpointAction(
     private fun addLineBreakpoint(
         it: Usage,
         breakpointManager: BreakpointManager,
-        document: Document?
+        document: Document
     ): Boolean {
-        val sourcePsi = it.toUElement()?.getParentOfTypeCallExpression()?.sourcePsi
+        val sourcePsi = it.getPostStatementSourcePsi()
         if (sourcePsi != null) {
             val lineNumber = sourcePsi.getLineNumber(true)
             breakpointManager.addLineBreakpoint(document, lineNumber)
@@ -253,10 +257,8 @@ private class SetBreakpointAction(
         breakpointManager: BreakpointManager,
         document: Document?
     ) {
-        val uMethod = it.getType<UMethod>()
-        val source = uMethod?.uastAnchor?.sourcePsi
+        val source = it.getSubscribeMethodSourcePsi()
         if (source != null) {
-            // TODO (uMethod.uastBody as UBlockExpression).expressions[0].sourcePsi?.getLineNumber(true)
             val lineNumber = source.getLineNumber(true)
             if (breakpointManager.findBreakpoint<BreakpointWithHighlighter<JavaBreakpointProperties<*>>>(
                     document,
@@ -265,6 +267,38 @@ private class SetBreakpointAction(
                 ) == null
             ) {
                 breakpointManager.addMethodBreakpoint(document, lineNumber)
+            }
+        }
+    }
+}
+
+private class RemoveBreakpointAction(
+    private val usages: List<Usage>,
+    private val closePopUp: (InputEvent) -> Unit
+) : AnAction(
+    "Remove Breakpoints",
+    "Remove breakpoints at all usages",
+    AllIcons.Debugger.MuteBreakpoints
+) {
+    override fun actionPerformed(e: AnActionEvent) {
+        closePopUp(e.inputEvent)
+        val project = e.project!!
+        val breakpointManager = DebuggerManagerEx.getInstanceEx(project).breakpointManager
+        val documentManager = PsiDocumentManager.getInstance(project)
+        usages.forEach {
+            val containingFile = it.file()
+            if (containingFile != null) {
+                val document = documentManager.getDocument(containingFile)
+                val source = it.getPostStatementSourcePsi() ?: it.getSubscribeMethodSourcePsi()
+                if (source != null && document != null) {
+                    val breakPoint =
+                        breakpointManager.findBreakpoint<BreakpointWithHighlighter<JavaBreakpointProperties<*>>>(
+                            document,
+                            source.startOffset,
+                            null
+                        )
+                    breakpointManager.removeBreakpoint(breakPoint)
+                }
             }
         }
     }

@@ -49,3 +49,9 @@ internal fun UElement.getParentOfTypeCallExpression(): UCallExpression? {
         .firstOrNull()
         ?.selector as? UCallExpression
 }
+
+internal fun Usage.getPostStatementSourcePsi() = toUElement()?.getParentOfTypeCallExpression()?.sourcePsi
+
+internal fun Usage.getSubscribeMethodSourcePsi() = getType<UMethod>()?.uastAnchor?.sourcePsi
+
+internal fun Usage.file() = toUElement()?.sourcePsi?.containingFile
