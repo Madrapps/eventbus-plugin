@@ -12,6 +12,8 @@ Features
 - Supports `post`, `postSticky` and `@Subscribe`
 - Jump from post to subscribe and vice versa
 - Shows marker only for `@Subscribe` methods that have correct signatures
+- Optionally show usages in 'Find' tool window
+- Add breakpoints to all usages in a single click
 - Fully supported for project using both Java and Kotlin
 
 Testing
