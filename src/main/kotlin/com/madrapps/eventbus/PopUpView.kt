@@ -116,7 +116,7 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
     return popUp
 }
 
-private fun getTitle(usages: List<Usage>) = if (usages.isEmpty()) "No usages found" else "Find Usages"
+private fun getTitle(usages: List<Usage>) = if (usages.isEmpty()) "No usages found" else "Usages"
 
 private fun resizeColumnWidth(table: JTable) {
     val columnModel = table.columnModel
