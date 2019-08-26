@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'com.madrapps'
-version '0.3.3.2018.3'
+version '0.4.2.2018.3'
 
 sourceCompatibility = 1.8
 
@@ -34,10 +34,7 @@ compileTestKotlin {
 
 patchPluginXml {
     changeNotes """
-      - Option to view usages in "Find" tool window <br>
-      - Improved the UI of the usages popup <br>
-      - Support for Enums <br>
-      - Support for `@file:JvmName()` <br>
-      - Performance improvement <br>
+      - Add breakpoints to `post` or `subscribe` in a single click <br>
+      - Option to clear added breakpoints as well <br>
     """
 }

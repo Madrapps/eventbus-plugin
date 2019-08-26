@@ -10,6 +10,8 @@
             <li>Supports <i>post</i>, <i>postSticky</i> and <i>@Subscribe</i></li>
             <li>Jump from post to subscribe and vice versa</li>
             <li>Shows marker only for <i>@Subscribe</i> methods that have correct signatures</li>
+            <li>Optionally show usages in 'Find' tool window</li>
+            <li>Add breakpoints to all usages in a single click</li>
             <li>Fully supported for project using both Java and Kotlin</li>
         </ul>]]>
     </description>

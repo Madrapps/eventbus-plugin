@@ -13,3 +13,7 @@ Features
 - Jump from post to subscribe and vice versa
 - Shows marker only for `@Subscribe` methods that have correct signatures
 - Fully supported for project using both Java and Kotlin
+
+Testing
+-----
+There are no unit tests yet (I am writing them, but hit a roadblock. We will soon find a way). Any changes made to the plugin should be tested against <a href="https://github.com/thsaravana/eventbus-playground">this project</a>. This project contains all possible use cases of EventBus in both Java and Kotlin.

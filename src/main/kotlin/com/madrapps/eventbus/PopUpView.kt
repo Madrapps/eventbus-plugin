@@ -1,5 +1,9 @@
 package com.madrapps.eventbus
 
+import com.intellij.debugger.DebuggerManagerEx
+import com.intellij.debugger.ui.breakpoints.BreakpointManager
+import com.intellij.debugger.ui.breakpoints.BreakpointWithHighlighter
+import com.intellij.icons.AllIcons
 import com.intellij.icons.AllIcons.Toolwindows.ToolWindowFind
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces.USAGE_VIEW_TOOLBAR
@@ -7,8 +11,10 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_FIND_USAGES
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.ui.ScrollingUtil
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.SimpleTextAttributes.REGULAR_ATTRIBUTES
@@ -20,6 +26,9 @@ import com.intellij.util.PlatformIcons
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.ListTableModel
 import com.intellij.util.ui.UIUtil
+import org.jetbrains.java.debugger.breakpoints.properties.JavaBreakpointProperties
+import org.jetbrains.kotlin.idea.refactoring.getLineNumber
+import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UMethod
@@ -91,7 +100,11 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
 
     if (usages.isNotEmpty()) {
         val actionGroup = DefaultActionGroup()
-        actionGroup.add(ShowUsagesAction(usages) { popUp?.closeOk(it) })
+        val closePopUp: (InputEvent) -> Unit = { popUp?.closeOk(it) }
+        actionGroup.add(SetBreakpointAction(usages, closePopUp))
+        actionGroup.add(RemoveBreakpointAction(usages, closePopUp))
+        actionGroup.addSeparator()
+        actionGroup.add(ShowUsagesAction(usages, closePopUp))
         val actionToolbar = ActionManager.getInstance().createActionToolbar(USAGE_VIEW_TOOLBAR, actionGroup, true)
         actionToolbar.setReservePlaceAutoPopupIcon(false)
         val toolBar = actionToolbar.component
@@ -103,7 +116,7 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
     return popUp
 }
 
-private fun getTitle(usages: List<Usage>) = if (usages.isEmpty()) "No usages found" else "Find Usages"
+private fun getTitle(usages: List<Usage>) = if (usages.isEmpty()) "No usages found" else "Usages"
 
 private fun resizeColumnWidth(table: JTable) {
     val columnModel = table.columnModel
@@ -198,5 +211,95 @@ private class ShowUsagesAction(
             toArray,
             usageViewPresentation
         )
+    }
+}
+
+private class SetBreakpointAction(
+    private val usages: List<Usage>,
+    private val closePopUp: (InputEvent) -> Unit
+) : AnAction(
+    "Set Breakpoints",
+    "Set breakpoints at all usages",
+    AllIcons.Debugger.Db_set_breakpoint
+) {
+    override fun actionPerformed(e: AnActionEvent) {
+        closePopUp(e.inputEvent)
+        val breakpointManager = DebuggerManagerEx.getInstanceEx(e.project!!).breakpointManager
+        usages.forEach {
+            val containingFile = it.file()
+            if (containingFile != null) {
+                val document = PsiDocumentManager.getInstance(e.project!!).getDocument(containingFile)
+                if (document != null) {
+                    val isBreakpointAdded = addLineBreakpoint(it, breakpointManager, document)
+                    if (!isBreakpointAdded) {
+                        addMethodBreakpoint(it, breakpointManager, document)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun addLineBreakpoint(
+        it: Usage,
+        breakpointManager: BreakpointManager,
+        document: Document
+    ): Boolean {
+        val sourcePsi = it.getPostStatementSourcePsi()
+        if (sourcePsi != null) {
+            val lineNumber = sourcePsi.getLineNumber(true)
+            breakpointManager.addLineBreakpoint(document, lineNumber)
+        }
+        return sourcePsi != null
+    }
+
+    private fun addMethodBreakpoint(
+        it: Usage,
+        breakpointManager: BreakpointManager,
+        document: Document?
+    ) {
+        val source = it.getSubscribeMethodSourcePsi()
+        if (source != null) {
+            val lineNumber = source.getLineNumber(true)
+            if (breakpointManager.findBreakpoint<BreakpointWithHighlighter<JavaBreakpointProperties<*>>>(
+                    document,
+                    source.startOffset,
+                    null
+                ) == null
+            ) {
+                breakpointManager.addMethodBreakpoint(document, lineNumber)
+            }
+        }
+    }
+}
+
+private class RemoveBreakpointAction(
+    private val usages: List<Usage>,
+    private val closePopUp: (InputEvent) -> Unit
+) : AnAction(
+    "Remove Breakpoints",
+    "Remove breakpoints at all usages",
+    AllIcons.Debugger.MuteBreakpoints
+) {
+    override fun actionPerformed(e: AnActionEvent) {
+        closePopUp(e.inputEvent)
+        val project = e.project!!
+        val breakpointManager = DebuggerManagerEx.getInstanceEx(project).breakpointManager
+        val documentManager = PsiDocumentManager.getInstance(project)
+        usages.forEach {
+            val containingFile = it.file()
+            if (containingFile != null) {
+                val document = documentManager.getDocument(containingFile)
+                val source = it.getPostStatementSourcePsi() ?: it.getSubscribeMethodSourcePsi()
+                if (source != null && document != null) {
+                    val breakPoint =
+                        breakpointManager.findBreakpoint<BreakpointWithHighlighter<JavaBreakpointProperties<*>>>(
+                            document,
+                            source.startOffset,
+                            null
+                        )
+                    breakpointManager.removeBreakpoint(breakPoint)
+                }
+            }
+        }
     }
 }
