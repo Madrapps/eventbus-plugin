@@ -13,7 +13,7 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_FIND_USAGES
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.ui.popup.JBPopup
-import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.ui.popup.PopupChooserBuilder
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.ui.ScrollingUtil
 import com.intellij.ui.SimpleColoredComponent
@@ -87,7 +87,7 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
         autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
     }
 
-    val builder = JBPopupFactory.getInstance().createPopupChooserBuilder(table)
+    val builder = PopupChooserBuilder(table)
         .setTitle(getTitle(usages))
         .setMovable(true)
         .setResizable(true)

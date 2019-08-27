@@ -4,7 +4,6 @@ import com.intellij.codeHighlighting.Pass
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.markup.GutterIconRenderer.Alignment.RIGHT
 import com.intellij.openapi.util.IconLoader
 import com.intellij.psi.PsiClass
@@ -14,7 +13,6 @@ import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.usageView.UsageInfo
 import com.intellij.usages.UsageInfo2UsageAdapter
-import com.intellij.util.concurrency.AppExecutorUtil
 import com.madrapps.eventbus.post.isPost
 import com.madrapps.eventbus.search
 import com.madrapps.eventbus.showSubscribeUsages
@@ -77,34 +75,32 @@ private class SubscribeLineMarkerInfo(
     Pass.LINE_MARKERS,
     null,
     { event, element ->
-        ReadAction.nonBlocking {
-            var usages = emptyList<UsageInfo2UsageAdapter>()
-            val uElement = element.toUElement()?.getParentOfType<UMethod>()
-            if (uElement != null) {
-                val elementToSearch =
-                    (uElement.uastParameters[0].type as PsiClassReferenceType).reference.resolve()
-                if (elementToSearch != null) {
-                    val psiClassElement = elementToSearch.toUElement()
-                    usages = if((psiClassElement as? PsiClass)?.isEnum == true) {
-                        val elementsToSearch = psiClassElement.allFields.filterIsInstance<PsiEnumConstant>()
-                        search(elementsToSearch)
-                            .filter(UsageInfo::isPost)
-                            .map(::UsageInfo2UsageAdapter)
-                    } else {
-                        search(elementToSearch)
-                            .filter(UsageInfo::isPost)
-                            .map(::UsageInfo2UsageAdapter)
-                    }
-                }
-            }
-            ApplicationManager.getApplication().invokeLater {
-                if (usages.size == 1) {
-                    usages.first().navigate(true)
+        var usages = emptyList<UsageInfo2UsageAdapter>()
+        val uElement = element.toUElement()?.getParentOfType<UMethod>()
+        if (uElement != null) {
+            val elementToSearch =
+                (uElement.uastParameters[0].type as PsiClassReferenceType).reference.resolve()
+            if (elementToSearch != null) {
+                val psiClassElement = elementToSearch.toUElement()
+                usages = if ((psiClassElement as? PsiClass)?.isEnum == true) {
+                    val elementsToSearch = psiClassElement.allFields.filterIsInstance<PsiEnumConstant>()
+                    search(elementsToSearch)
+                        .filter(UsageInfo::isPost)
+                        .map(::UsageInfo2UsageAdapter)
                 } else {
-                    showSubscribeUsages(usages, RelativePoint(event))
+                    search(elementToSearch)
+                        .filter(UsageInfo::isPost)
+                        .map(::UsageInfo2UsageAdapter)
                 }
             }
-        }.inSmartMode(element.project).submit(AppExecutorUtil.getAppExecutorService())
+        }
+        ApplicationManager.getApplication().invokeLater {
+            if (usages.size == 1) {
+                usages.first().navigate(true)
+            } else {
+                showSubscribeUsages(usages, RelativePoint(event))
+            }
+        }
     },
     RIGHT
 )
