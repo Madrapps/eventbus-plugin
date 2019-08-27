@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'com.madrapps'
-version '0.4.2.2018.3'
+version '0.4.2.2018.2'
 
 sourceCompatibility = 1.8
 
@@ -22,7 +22,7 @@ dependencies {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version '2018.3'
+    version '2018.2'
     plugins 'Kotlin'
 }
 compileKotlin {
