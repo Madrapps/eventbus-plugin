@@ -48,6 +48,7 @@ internal fun UsageInfo.isPost(): Boolean {
 private fun UCallExpression.isPost(): Boolean {
     return receiverType?.canonicalText == "org.greenrobot.eventbus.EventBus"
             && (methodName == "post" || methodName == "postSticky")
+            && valueArgumentCount == 1
 }
 
 private class PostLineMarkerInfo(
