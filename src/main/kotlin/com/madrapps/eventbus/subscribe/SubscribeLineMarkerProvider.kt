@@ -4,7 +4,7 @@ import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.editor.markup.GutterIconRenderer.Alignment.RIGHT
+import com.intellij.openapi.editor.markup.GutterIconRenderer.Alignment.LEFT
 import com.intellij.openapi.util.IconLoader
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
@@ -101,5 +101,5 @@ private class SubscribeLineMarkerInfo(
             }
         }.inSmartMode(element.project).submit(AppExecutorUtil.getAppExecutorService())
     },
-    RIGHT
+    LEFT
 )
