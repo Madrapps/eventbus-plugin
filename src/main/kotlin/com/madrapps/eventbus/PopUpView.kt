@@ -15,10 +15,12 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.psi.PsiDocumentManager
+import com.intellij.ui.Cell
 import com.intellij.ui.ScrollingUtil
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.SimpleTextAttributes.REGULAR_ATTRIBUTES
 import com.intellij.ui.SimpleTextAttributes.REGULAR_ITALIC_ATTRIBUTES
+import com.intellij.ui.TableSpeedSearch
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.table.JBTable
 import com.intellij.usages.*
@@ -73,6 +75,7 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
 
     val table = JBTable().apply {
         ScrollingUtil.installActions(this)
+        installSpeedSearch(this)
         model = ListTableModel(columnInfos, usages)
         tableHeader = null
         showHorizontalLines = false
@@ -114,6 +117,12 @@ private fun showTablePopUp(usages: List<Usage>, columnInfos: Array<MyColumnInfo>
     }
     popUp = builder.createPopup()
     return popUp
+}
+
+private fun installSpeedSearch(table: JBTable) {
+    TableSpeedSearch(table) { o: Any?, cell: Cell ->
+        if (o != null && cell.column == 2) o.toString() else ""
+    }
 }
 
 private fun getTitle(usages: List<Usage>) = if (usages.isEmpty()) "No usages found" else "Usages"

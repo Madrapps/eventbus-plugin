@@ -15,6 +15,7 @@ import com.intellij.ui.awt.RelativePoint
 import com.intellij.usageView.UsageInfo
 import com.intellij.usages.UsageInfo2UsageAdapter
 import com.intellij.util.concurrency.AppExecutorUtil
+import com.madrapps.eventbus.blog
 import com.madrapps.eventbus.post.isPost
 import com.madrapps.eventbus.search
 import com.madrapps.eventbus.showSubscribeUsages
@@ -97,6 +98,7 @@ private class SubscribeLineMarkerInfo(
                     }
                 }
             }
+            blog("SubscribeLineMarker - ${usages.size} usages found")
             ApplicationManager.getApplication().invokeLater {
                 if (usages.size == 1) {
                     usages.first().navigate(true)
