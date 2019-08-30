@@ -57,11 +57,3 @@ internal fun Usage.getPostStatementSourcePsi() = toUElement()?.getParentOfTypeCa
 internal fun Usage.getSubscribeMethodSourcePsi() = getType<UMethod>()?.uastAnchor?.sourcePsi
 
 internal fun Usage.file() = toUElement()?.sourcePsi?.containingFile
-
-internal fun UQualifiedReferenceExpression.lastReceiver(): UExpression? {
-    var temp = receiver
-    while (temp is UQualifiedReferenceExpression) {
-        temp = temp.receiver
-    }
-    return temp
-}

@@ -15,7 +15,10 @@ import com.intellij.usages.UsageInfo2UsageAdapter
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.madrapps.eventbus.*
 import com.madrapps.eventbus.subscribe.isSubscribe
-import org.jetbrains.uast.*
+import org.jetbrains.uast.UCallExpression
+import org.jetbrains.uast.UImportStatement
+import org.jetbrains.uast.getParentOfType
+import org.jetbrains.uast.toUElement
 
 class PostLineMarkerProvider : LineMarkerProvider {
 
@@ -61,19 +64,13 @@ private class PostLineMarkerInfo(
             val uElement = element.toUElement()?.getParentOfType<UCallExpression>()
             if (uElement != null) {
                 val argument = uElement.valueArguments.firstOrNull()
-                val elementsToSearch: List<PsiElement> = if (argument is UQualifiedReferenceExpression) {
-                    val sourcePsi = (argument.lastReceiver() as USimpleNameReferenceExpression).sourcePsi
-                    sourcePsi?.references?.mapNotNull { it.resolve() } ?: emptyList()
-                } else {
-                    val resolve = (argument?.getExpressionType() as PsiClassType).resolve()
-                    if (resolve != null) {
-                        listOf(resolve)
-                    } else emptyList()
+                val resolve = (argument?.getExpressionType() as PsiClassType).resolve()
+                if (resolve != null) {
+                    val collection = search(resolve)
+                    usages = collection
+                        .filter(UsageInfo::isSubscribe)
+                        .map(::UsageInfo2UsageAdapter)
                 }
-                val collection = search(elementsToSearch)
-                usages = collection
-                    .filter(UsageInfo::isSubscribe)
-                    .map(::UsageInfo2UsageAdapter)
             }
             blog("PostLineMarker - ${usages.size} usages found")
             ApplicationManager.getApplication().invokeLater {
