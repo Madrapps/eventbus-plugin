@@ -12,11 +12,13 @@ internal fun search(elements: List<PsiElement>): Collection<UsageInfo> {
     val references = elements.flatMap {
         ReferencesSearch.search(it).findAll()
     }
+    blog("Search - ${references.size} found")
     return references.map(::UsageInfo)
 }
 
 internal fun search(element: PsiElement): Collection<UsageInfo> {
     val references = ReferencesSearch.search(element).findAll()
+    blog("Search - ${references.size} found")
     return references.map(::UsageInfo)
 }
 
