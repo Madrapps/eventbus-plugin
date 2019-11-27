@@ -45,7 +45,7 @@ internal fun UElement.getParentOfTypeCallExpression(): UCallExpression? {
     return withContainingElements
         .filterIsInstance<UCallExpression>()
         .find {
-            it.kind == METHOD_CALL //&& it.getParentOfType<UQualifiedReferenceExpression>() == null
+            it.kind == METHOD_CALL && (it.methodName == "post" || it.methodName == "postSticky")
         } ?: withContainingElements
         .filterIsInstance<UQualifiedReferenceExpression>()
         .firstOrNull()

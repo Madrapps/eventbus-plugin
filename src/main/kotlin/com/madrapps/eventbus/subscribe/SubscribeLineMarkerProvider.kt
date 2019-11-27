@@ -15,6 +15,7 @@ import com.intellij.usageView.UsageInfo
 import com.intellij.usages.UsageInfo2UsageAdapter
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.madrapps.eventbus.blog
+import com.madrapps.eventbus.getParentOfTypeCallExpression
 import com.madrapps.eventbus.post.isPost
 import com.madrapps.eventbus.search
 import com.madrapps.eventbus.showSubscribeUsages
@@ -79,16 +80,40 @@ private class SubscribeLineMarkerInfo(
                     (uElement.uastParameters[0].type as PsiClassReferenceType).reference.resolve()
                 if (elementToSearch != null) {
                     val psiClassElement = elementToSearch.toUElement()
-                    usages = if((psiClassElement as? PsiClass)?.isEnum == true) {
+                    val collection = if ((psiClassElement as? PsiClass)?.isEnum == true) {
                         val elementsToSearch = psiClassElement.allFields.filterIsInstance<PsiEnumConstant>()
                         search(elementsToSearch)
-                            .filter(UsageInfo::isPost)
-                            .map(::UsageInfo2UsageAdapter)
                     } else {
                         search(elementToSearch)
-                            .filter(UsageInfo::isPost)
-                            .map(::UsageInfo2UsageAdapter)
                     }
+                    val nonImports = collection.filter {
+                        it.element.toUElement()?.getParentOfType<UImportStatement>() == null
+                    }
+                    val map = nonImports.flatMap {
+                        val uuElement = it.element.toUElement()
+                        if (uuElement != null) {
+                            val parentOfTypeCallExpression = uuElement.getParentOfTypeCallExpression()
+                            val some = if (parentOfTypeCallExpression != null) {
+                                listOf(parentOfTypeCallExpression.sourcePsi)
+                            } else {
+                                val method = uuElement.uastParent?.uastParent as? UMethod
+                                val sourcePsi = method?.sourcePsi
+                                if (sourcePsi != null && method.returnTypeReference?.getQualifiedName() == (elementToSearch as? PsiClass)?.qualifiedName) {
+                                    val list = search(sourcePsi).map { it.element }
+                                    list
+                                } else {
+                                    listOf(uuElement.sourcePsi)
+                                }
+                            }
+                            some
+                        } else {
+                            listOf(uuElement?.sourcePsi)
+                        }
+                    }.filterNotNull()
+                        .distinct()
+                        .map(::UsageInfo)
+                    usages = map.filter(UsageInfo::isPost)
+                        .map(::UsageInfo2UsageAdapter)
                 }
             }
             blog("SubscribeLineMarker - ${usages.size} usages found")

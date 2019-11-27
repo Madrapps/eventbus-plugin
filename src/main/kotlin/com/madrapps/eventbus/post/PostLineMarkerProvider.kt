@@ -16,7 +16,6 @@ import com.intellij.util.concurrency.AppExecutorUtil
 import com.madrapps.eventbus.*
 import com.madrapps.eventbus.subscribe.isSubscribe
 import org.jetbrains.uast.UCallExpression
-import org.jetbrains.uast.UImportStatement
 import org.jetbrains.uast.getParentOfType
 import org.jetbrains.uast.toUElement
 
@@ -38,7 +37,9 @@ class PostLineMarkerProvider : LineMarkerProvider {
 internal fun UsageInfo.isPost(): Boolean {
     val uElement = element.toUElement()
     if (uElement != null) {
-        if (uElement.getParentOfType<UImportStatement>() == null) {
+        if (uElement is UCallExpression) {
+            return uElement.isPost()
+        } else {
             return uElement.getParentOfTypeCallExpression()?.isPost() == true
         }
     }
