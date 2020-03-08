@@ -1,4 +1,4 @@
-# <img src="/preview/logo.png" title="logo"/> GreenRobot EventBus Plugin
+# <img src="/preview/logo.png" title="logo" height="50" width="50" /> GreenRobot EventBus Plugin
 IntelliJ iDEA plugin to work with projects using greenrobot's <a href="http://greenrobot.org/eventbus/">EventBus</a> library
 
 <img src="/preview/screenshare.gif" alt="preview" title="preview"/>
