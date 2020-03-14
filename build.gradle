@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'com.madrapps'
-version '0.5.3.2019.2'
+version '0.5.4.2019.2'
 
 sourceCompatibility = 1.8
 
