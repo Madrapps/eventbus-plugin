@@ -13,6 +13,7 @@
             <li>Optionally show usages in 'Find' tool window</li>
             <li>Add breakpoints to all usages in a single click</li>
             <li>Fully supported for project using both Java and Kotlin</li>
+            <li>Enabling Speed search in the Usages popup</li>
         </ul>]]>
     </description>
 
