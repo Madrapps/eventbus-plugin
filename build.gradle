@@ -1,11 +1,11 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.intellij' version '0.4.9'
-    id 'org.jetbrains.kotlin.jvm' version '1.3.21'
+    id 'org.jetbrains.intellij' version '0.6.5'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.72'
 }
 
 group 'com.madrapps'
-version '0.5.5.2020.2'
+version '0.5.5.2020.3'
 
 sourceCompatibility = 1.8
 
@@ -22,7 +22,7 @@ dependencies {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version '2020.2'
+    version '2020.3'
     plugins 'Kotlin', 'java'
 }
 compileKotlin {
@@ -34,6 +34,5 @@ compileTestKotlin {
 
 patchPluginXml {
     changeNotes """
-      - UX improvement <br>
     """
 }
