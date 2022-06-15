@@ -1,13 +1,11 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.intellij' version '0.7.3'
-    id 'org.jetbrains.kotlin.jvm' version '1.5.21'
+    id 'org.jetbrains.intellij' version '1.6.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.7.0'
 }
 
 group 'com.madrapps'
-version '0.5.5.2021.3.2'
-
-sourceCompatibility = 1.8
+version '0.5.5.2022.1.0'
 
 repositories {
     mavenCentral()
@@ -20,13 +18,13 @@ dependencies {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version '2021.3'
+    version = '2022.1'
     plugins = ['Kotlin', 'java']
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "11"
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "11"
 }
